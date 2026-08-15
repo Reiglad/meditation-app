@@ -1,0 +1,434 @@
+/* style.css
+   Upmind (https://upmind.co.jp/) を参考にしたUI。
+   グリーン基調のグラデーション背景・白カード・ピル型バッジ・丸みのあるボタン。
+   prefers-color-scheme に連動したダーク/ライト自動切り替え。
+   iPhone Safariのセーフエリア（ノッチ・ホームインジケータ）に対応。
+*/
+
+:root {
+  --bg-top: #eaf3ec;
+  --bg-bottom: #ffffff;
+  --surface: #ffffff;
+  --text: #1f2e27;
+  --text-muted: #6f8078;
+  --accent: #2f6f5e;
+  --accent-soft: #dcefe4;
+  --accent-text: #ffffff;
+  --border: #e3ede6;
+  --danger: #c1594c;
+  --danger-soft: #f6e3df;
+  --ring-1: #f3c9d4;
+  --ring-2: #bcd8ee;
+  --ring-3: #a8dcc2;
+  --shadow: 0 8px 24px rgba(47, 111, 94, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-top: #16211c;
+    --bg-bottom: #0f1713;
+    --surface: #1c2a23;
+    --text: #eaf3ec;
+    --text-muted: #93a89c;
+    --accent: #7fc6a4;
+    --accent-soft: #24382f;
+    --accent-text: #0f1713;
+    --border: #2a3b32;
+    --danger: #e0958a;
+    --danger-soft: #3a2622;
+    --ring-1: #4a3038;
+    --ring-2: #2b3c4a;
+    --ring-3: #274233;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 340px);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* iPhoneのセーフエリア対応 */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+}
+
+header.app-header {
+  padding: 0.5rem 0 1.25rem;
+}
+
+.greeting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.greeting-text .hello {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+header.app-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0.1rem 0 0;
+  letter-spacing: 0.01em;
+}
+
+.header-icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  box-shadow: var(--shadow);
+}
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.9rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.screen[hidden] {
+  display: none;
+}
+
+/* --- ホーム画面 --- */
+.home-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.big-button {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.15rem 1.3rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease, opacity 0.15s ease;
+}
+
+.big-button:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.big-button .icon {
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  background: var(--accent-soft);
+}
+
+.big-button .label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.big-button .sub {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.big-button.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+.big-button.primary .icon {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.big-button.primary .sub {
+  color: var(--accent-text);
+  opacity: 0.8;
+}
+
+/* --- セッション画面（瞑想・NSDR共通） --- */
+.session-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0.5rem 0 0;
+}
+
+.timer-display {
+  font-size: 3rem;
+  font-weight: 200;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  margin: 1rem 0;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+}
+
+.player-wrap {
+  border-radius: 20px;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 16 / 9;
+  box-shadow: var(--shadow);
+}
+
+.player-wrap iframe,
+.player-wrap > div {
+  width: 100%;
+  height: 100%;
+}
+
+.session-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.btn {
+  flex: 1;
+  padding: 0.95rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.btn:active {
+  opacity: 0.85;
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+.btn.danger {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.btn.ghost {
+  background: transparent;
+  box-shadow: none;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* --- 戻るリンク --- */
+.back-link {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 0.4rem 0;
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+/* --- 統計・履歴画面 --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7rem;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1rem 0.5rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat-card .ring {
+  width: 2.4rem;
+  height: 2.4rem;
+  margin: 0 auto 0.5rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-card:nth-child(1) .ring {
+  background: var(--ring-1);
+}
+
+.stat-card:nth-child(2) .ring {
+  background: var(--ring-2);
+}
+
+.stat-card:nth-child(3) .ring {
+  background: var(--ring-3);
+}
+
+.stat-card .value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  display: block;
+}
+
+.stat-card .label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.history-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  box-shadow: var(--shadow);
+}
+
+.history-item .meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-item .date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.history-item .type-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  width: fit-content;
+  margin-bottom: 0.25rem;
+}
+
+.history-item .type-badge.nsdr {
+  background: var(--ring-2);
+  color: var(--text);
+}
+
+.history-item .duration {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.history-item .delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.3rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 2rem 0;
+}
+
+/* --- 注記バナー --- */
+.notice {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.7rem 0.9rem;
+  text-align: center;
+}
+
+.notice.warning {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: var(--danger-soft);
+}
+
+.notice[hidden] {
+  display: none;
+}

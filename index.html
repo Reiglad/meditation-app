@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>瞑想記録</title>
+<meta name="description" content="瞑想とNSDRを記録する個人用PWA" />
+
+<!-- PWA関連 -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#f2ede4" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#16201f" media="(prefers-color-scheme: dark)" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="瞑想記録" />
+
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app">
+  <!-- ホーム画面 -->
+  <section id="screen-home" class="screen">
+    <header class="app-header">
+      <div class="greeting-row">
+        <div class="greeting-text">
+          <span class="hello">こんにちは</span>
+          <h1>瞑想記録</h1>
+        </div>
+        <div class="header-icon" aria-hidden="true">🌿</div>
+      </div>
+      <div class="streak-badge">
+        <span aria-hidden="true">🔥</span>
+        <span id="home-streak-text">連続日数 0日</span>
+      </div>
+    </header>
+    <p id="offline-notice-home" class="notice" hidden>
+      現在オフラインです。BGM/ナレーションの再生にはインターネット接続が必要ですが、タイマーと記録の閲覧はオフラインでも利用できます。
+    </p>
+    <div class="home-actions">
+      <button id="btn-go-meditation" class="big-button primary" type="button">
+        <span class="icon" aria-hidden="true">🌙</span>
+        <span class="label-group">
+          <span class="title">瞑想を始める</span>
+          <span class="sub">BGMを聴きながら瞑想タイマーを実施</span>
+        </span>
+      </button>
+      <button id="btn-go-nsdr" class="big-button" type="button">
+        <span class="icon" aria-hidden="true">🌊</span>
+        <span class="label-group">
+          <span class="title">NSDRを始める</span>
+          <span class="sub">誘導ナレーションを聴きながら実施</span>
+        </span>
+      </button>
+      <button id="btn-go-history" class="big-button" type="button">
+        <span class="icon" aria-hidden="true">📊</span>
+        <span class="label-group">
+          <span class="title">記録を見る</span>
+          <span class="sub">履歴・連続日数・週間/月間の合計</span>
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <!-- 瞑想画面 -->
+  <section id="screen-meditation" class="screen" hidden>
+    <button class="back-link" data-target="home" type="button">← ホームに戻る</button>
+    <p class="session-title">瞑想</p>
+    <p id="offline-notice-meditation" class="notice warning" hidden>
+      オフラインのためBGMを再生できません。タイマーのみ利用できます。
+    </p>
+    <div class="player-wrap">
+      <div id="yt-player-meditation"></div>
+    </div>
+    <div id="meditation-timer-display" class="timer-display">00:00</div>
+    <div class="session-controls">
+      <button id="btn-meditation-start" class="btn primary" type="button">開始</button>
+      <button id="btn-meditation-stop" class="btn danger" type="button" disabled>終了して記録</button>
+    </div>
+  </section>
+
+  <!-- NSDR画面 -->
+  <section id="screen-nsdr" class="screen" hidden>
+    <button class="back-link" data-target="home" type="button">← ホームに戻る</button>
+    <p class="session-title">NSDR</p>
+    <p id="offline-notice-nsdr" class="notice warning" hidden>
+      オフラインのためナレーションを再生できません。タイマーのみ利用できます。
+    </p>
+    <div class="player-wrap">
+      <div id="yt-player-nsdr"></div>
+    </div>
+    <div id="nsdr-timer-display" class="timer-display">00:00</div>
+    <div class="session-controls">
+      <button id="btn-nsdr-start" class="btn primary" type="button">開始</button>
+      <button id="btn-nsdr-stop" class="btn danger" type="button" disabled>終了して記録</button>
+    </div>
+  </section>
+
+  <!-- 記録画面 -->
+  <section id="screen-history" class="screen" hidden>
+    <button class="back-link" data-target="home" type="button">← ホームに戻る</button>
+    <p class="session-title">記録</p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="ring" aria-hidden="true">🔥</div>
+        <span id="stat-streak" class="value">0</span>
+        <span class="label">連続日数</span>
+      </div>
+      <div class="stat-card">
+        <div class="ring" aria-hidden="true">🌙</div>
+        <span id="stat-weekly" class="value">0分</span>
+        <span class="label">今週の合計</span>
+      </div>
+      <div class="stat-card">
+        <div class="ring" aria-hidden="true">🌊</div>
+        <span id="stat-monthly" class="value">0分</span>
+        <span class="label">今月の合計</span>
+      </div>
+    </div>
+
+    <ul id="history-list" class="history-list"></ul>
+    <p id="history-empty" class="empty-state" hidden>まだ記録がありません</p>
+  </section>
+</div>
+
+<!-- js/config.js: BGM/ナレーション動画IDの設定 -->
+<script src="js/config.js"></script>
+<!-- js/storage.js: localStorage読み書き -->
+<script src="js/storage.js"></script>
+<!-- js/stats.js: 統計計算 -->
+<script src="js/stats.js"></script>
+<!-- js/player.js: YouTube IFrame Player 共通ラッパー -->
+<script src="js/player.js"></script>
+<!-- js/timer.js: 瞑想タイマー -->
+<script src="js/timer.js"></script>
+<!-- js/nsdr.js: NSDR再生 -->
+<script src="js/nsdr.js"></script>
+
+<script>
+  // ------------------------------------------------------------
+  // アプリ全体の初期化・画面遷移・イベント配線
+  // （storage.js / stats.js / player.js / timer.js / nsdr.js が
+  //   公開する関数・オブジェクトのみを利用する薄いUI制御層）
+  // ------------------------------------------------------------
+
+  // --- 画面遷移 ---
+  const screens = {
+    home: document.getElementById('screen-home'),
+    meditation: document.getElementById('screen-meditation'),
+    nsdr: document.getElementById('screen-nsdr'),
+    history: document.getElementById('screen-history'),
+  };
+
+  function showScreen(name) {
+    Object.keys(screens).forEach((key) => {
+      screens[key].hidden = key !== name;
+    });
+    if (name === 'history') {
+      renderHistory();
+    }
+    if (name === 'home') {
+      updateHomeStreak();
+    }
+  }
+
+  // ホーム画面上部の「連続日数」バッジを更新する
+  function updateHomeStreak() {
+    const streak = calcStreak(getSessions());
+    document.getElementById('home-streak-text').textContent = `連続日数 ${streak}日`;
+  }
+
+  document.getElementById('btn-go-meditation').addEventListener('click', () => showScreen('meditation'));
+  document.getElementById('btn-go-nsdr').addEventListener('click', () => showScreen('nsdr'));
+  document.getElementById('btn-go-history').addEventListener('click', () => showScreen('history'));
+  document.querySelectorAll('.back-link').forEach((btn) => {
+    btn.addEventListener('click', () => showScreen(btn.dataset.target));
+  });
+
+  // --- オフライン通知 ---
+  function updateOfflineNotices() {
+    const offline = !navigator.onLine;
+    document.getElementById('offline-notice-home').hidden = !offline;
+    document.getElementById('offline-notice-meditation').hidden = !offline;
+    document.getElementById('offline-notice-nsdr').hidden = !offline;
+  }
+  window.addEventListener('online', updateOfflineNotices);
+  window.addEventListener('offline', updateOfflineNotices);
+  updateOfflineNotices();
+
+  // YouTube IFrame Player API自体の読み込みに失敗した場合も同様に警告する
+  MeditationPlayer.onApiUnavailable(() => {
+    document.getElementById('offline-notice-meditation').hidden = false;
+    document.getElementById('offline-notice-nsdr').hidden = false;
+  });
+
+  // --- 瞑想画面の配線 ---
+  const meditationPlayer = MeditationPlayer.create('yt-player-meditation');
+  meditationPlayer.load(CONFIG.MEDITATION_BGM_VIDEO_ID);
+
+  const meditationDisplay = document.getElementById('meditation-timer-display');
+  const meditationStartBtn = document.getElementById('btn-meditation-start');
+  const meditationStopBtn = document.getElementById('btn-meditation-stop');
+
+  MeditationTimer.setCallbacks(
+    (elapsedSec) => {
+      meditationDisplay.textContent = formatElapsed(elapsedSec);
+    },
+    (running) => {
+      meditationStartBtn.disabled = running;
+      meditationStopBtn.disabled = !running;
+    }
+  );
+
+  meditationStartBtn.addEventListener('click', () => {
+    meditationPlayer.play(); // ユーザー操作の文脈内で呼ぶ（iOSの自動再生制限対策）
+    MeditationTimer.start();
+  });
+
+  meditationStopBtn.addEventListener('click', () => {
+    const elapsedSec = MeditationTimer.stop();
+    meditationPlayer.pause();
+    meditationDisplay.textContent = '00:00';
+    if (elapsedSec > 0) {
+      finishMeditationSession(elapsedSec);
+    }
+  });
+
+  // --- NSDR画面の配線 ---
+  const nsdrPlayer = MeditationPlayer.create('yt-player-nsdr');
+  nsdrPlayer.load(CONFIG.NSDR_NARRATION_VIDEO_ID);
+
+  const nsdrDisplay = document.getElementById('nsdr-timer-display');
+  const nsdrStartBtn = document.getElementById('btn-nsdr-start');
+  const nsdrStopBtn = document.getElementById('btn-nsdr-stop');
+
+  NsdrTimer.setCallbacks(
+    (elapsedSec) => {
+      nsdrDisplay.textContent = formatElapsed(elapsedSec);
+    },
+    (running) => {
+      nsdrStartBtn.disabled = running;
+      nsdrStopBtn.disabled = !running;
+    }
+  );
+
+  nsdrStartBtn.addEventListener('click', () => {
+    nsdrPlayer.play();
+    NsdrTimer.start();
+  });
+
+  nsdrStopBtn.addEventListener('click', () => {
+    const elapsedSec = NsdrTimer.stop();
+    nsdrPlayer.pause();
+    nsdrDisplay.textContent = '00:00';
+    if (elapsedSec > 0) {
+      finishNsdrSession(elapsedSec);
+    }
+  });
+
+  function formatElapsed(totalSec) {
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    const ss = String(s).padStart(2, '0');
+    if (h > 0) {
+      return `${h}:${String(m).padStart(2, '0')}:${ss}`;
+    }
+    return `${String(m).padStart(2, '0')}:${ss}`;
+  }
+
+  // --- 記録画面の描画 ---
+  function renderHistory() {
+    const sessions = getSessions();
+
+    document.getElementById('stat-streak').textContent = String(calcStreak(sessions));
+    document.getElementById('stat-weekly').textContent = formatDuration(calcWeeklyTotal(sessions));
+    document.getElementById('stat-monthly').textContent = formatDuration(calcMonthlyTotal(sessions));
+
+    const list = document.getElementById('history-list');
+    const emptyState = document.getElementById('history-empty');
+    list.innerHTML = '';
+
+    if (sessions.length === 0) {
+      emptyState.hidden = false;
+      return;
+    }
+    emptyState.hidden = true;
+
+    // 新しい記録が上に来るよう、createdAt降順で表示
+    const sorted = [...sessions].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+
+    sorted.forEach((session) => {
+      const li = document.createElement('li');
+      li.className = 'history-item';
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+
+      const badge = document.createElement('span');
+      badge.className = 'type-badge' + (session.type === 'nsdr' ? ' nsdr' : '');
+      badge.textContent = session.type === 'nsdr' ? 'NSDR' : '瞑想';
+
+      const date = document.createElement('span');
+      date.className = 'date';
+      date.textContent = session.date;
+
+      meta.appendChild(badge);
+      meta.appendChild(date);
+
+      const duration = document.createElement('span');
+      duration.className = 'duration';
+      duration.textContent = formatDuration(session.durationSec);
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.type = 'button';
+      deleteBtn.textContent = '削除';
+      deleteBtn.addEventListener('click', () => {
+        deleteSession(session.id);
+        renderHistory();
+      });
+
+      li.appendChild(meta);
+      li.appendChild(duration);
+      li.appendChild(deleteBtn);
+      list.appendChild(li);
+    });
+  }
+
+  // --- Service Worker登録 ---
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch((e) => {
+        console.error('Service Worker登録に失敗しました', e);
+      });
+    });
+  }
+
+  // 初期表示
+  showScreen('home');
+</script>
+</body>
+</html>

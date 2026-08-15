@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" fill="#33555A"/>
+  <!-- 瞑想（蓮の花）を模した簡易アイコン -->
+  <g fill="#F2EDE4">
+    <circle cx="256" cy="256" r="54"/>
+    <ellipse cx="256" cy="150" rx="34" ry="60"/>
+    <ellipse cx="256" cy="362" rx="34" ry="60"/>
+    <ellipse cx="150" cy="256" rx="60" ry="34"/>
+    <ellipse cx="362" cy="256" rx="60" ry="34"/>
+    <ellipse cx="181" cy="181" rx="34" ry="58" transform="rotate(-45 181 181)"/>
+    <ellipse cx="331" cy="181" rx="34" ry="58" transform="rotate(45 331 181)"/>
+    <ellipse cx="181" cy="331" rx="34" ry="58" transform="rotate(45 181 331)"/>
+    <ellipse cx="331" cy="331" rx="34" ry="58" transform="rotate(-45 331 331)"/>
+  </g>
+  <circle cx="256" cy="256" r="30" fill="#33555A"/>
+</svg>
