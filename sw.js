@@ -10,7 +10,7 @@
 // installイベントが発火せず、古いキャッシュ（例: 差し替え前のconfig.jsの動画ID）が
 // 使われ続けてしまう。CACHE_NAMEを変えることでsw.js自体のバイト内容が変わり、
 // 確実に新しいバージョンとして認識・再キャッシュされる。
-const CACHE_NAME = 'meditation-app-cache-v9';
+const CACHE_NAME = 'meditation-app-cache-v10';
 
 // 背景写真（images/nature/*.webp）はここには含めない。
 // 起動のたびランダムな1枚だけを表示するため、事前キャッシュすると初回ロードが

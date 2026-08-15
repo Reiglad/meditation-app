@@ -1,6 +1,8 @@
 // timer.js
-// 瞑想（通常瞑想）タイマー。BGM動画を再生しながら経過時間を計測し、
-// 終了時にセッション記録を保存する。
+// 瞑想（通常瞑想）タイマー。
+// - 動画モード：BGM動画を画面に表示しながら経過時間を計測（従来どおりカウントアップのみ）。
+// - タイマーモード：目標時間（targetSec）を指定して開始し、残り時間をカウントダウン表示。
+//   目標時間に達すると自動的にタイマーを終了し、onCompleteコールバックを呼ぶ。
 //
 // iOS SafariのPWAは画面ロック中・バックグラウンド時にJSタイマーの精度が
 // 落ちる（または停止する）ため、経過時間は setInterval の呼び出し回数ではなく
@@ -11,13 +13,31 @@ const MeditationTimer = (() => {
   let startTimestamp = null;
   let intervalId = null;
   let running = false;
-  let onTick = null; // (elapsedSec) => void
+  let targetSec = null; // タイマーモードの目標秒数。null なら動画モード（カウントアップのみ）
+  let onTick = null; // (elapsedSec, targetSec|null) => void
   let onStateChange = null; // (running) => void
+  let onComplete = null; // (elapsedSec) => void 目標秒数に達したときに呼ばれる
+
+  function finishByTarget(elapsedSec) {
+    const cb = onComplete;
+    clearInterval(intervalId);
+    intervalId = null;
+    running = false;
+    startTimestamp = null;
+    targetSec = null;
+    onComplete = null;
+    if (typeof onStateChange === 'function') onStateChange(false);
+    if (typeof cb === 'function') cb(elapsedSec);
+  }
 
   function tick() {
     if (!running || startTimestamp === null) return;
     const elapsedSec = Math.floor((Date.now() - startTimestamp) / 1000);
-    if (typeof onTick === 'function') onTick(elapsedSec);
+    const currentTarget = targetSec;
+    if (typeof onTick === 'function') onTick(elapsedSec, currentTarget);
+    if (currentTarget !== null && elapsedSec >= currentTarget) {
+      finishByTarget(elapsedSec);
+    }
   }
 
   function handleVisibilityChange() {
@@ -32,7 +52,7 @@ const MeditationTimer = (() => {
   return {
     /**
      * コールバックを登録する
-     * @param {Function} tickCallback - (elapsedSec) => void
+     * @param {Function} tickCallback - (elapsedSec, targetSec|null) => void
      * @param {Function} stateChangeCallback - (running: boolean) => void
      */
     setCallbacks(tickCallback, stateChangeCallback) {
@@ -42,9 +62,16 @@ const MeditationTimer = (() => {
 
     /**
      * タイマーを開始する
+     * @param {Object} [options]
+     * @param {number} [options.targetSec] - タイマーモードの目標秒数。指定すると
+     *   到達時に自動終了し onComplete が呼ばれる。省略時は動画モード（カウントアップのみ）。
+     * @param {Function} [options.onComplete] - (elapsedSec) => void
      */
-    start() {
+    start(options) {
       if (running) return;
+      const opts = options || {};
+      targetSec = typeof opts.targetSec === 'number' ? opts.targetSec : null;
+      onComplete = typeof opts.onComplete === 'function' ? opts.onComplete : null;
       startTimestamp = Date.now();
       running = true;
       intervalId = setInterval(tick, 1000);
@@ -63,6 +90,8 @@ const MeditationTimer = (() => {
       intervalId = null;
       running = false;
       startTimestamp = null;
+      targetSec = null;
+      onComplete = null;
       if (typeof onStateChange === 'function') onStateChange(false);
       return elapsedSec;
     },
@@ -76,12 +105,13 @@ const MeditationTimer = (() => {
 /**
  * 瞑想セッションを終了して記録を保存するヘルパー
  * @param {number} elapsedSec
+ * @param {string} [youtubeVideoId] - 省略時は動画モード用のBGM IDを使う
  * @returns {Object} 保存されたセッション記録
  */
-function finishMeditationSession(elapsedSec) {
+function finishMeditationSession(elapsedSec, youtubeVideoId) {
   return addSession({
     type: 'meditation',
     durationSec: elapsedSec,
-    youtubeVideoId: CONFIG.MEDITATION_BGM_VIDEO_ID,
+    youtubeVideoId: youtubeVideoId || CONFIG.MEDITATION_BGM_VIDEO_ID,
   });
 }

@@ -11,8 +11,13 @@
 //   - ライブ配信ではなく通常動画（できれば長尺・ループ可能なもの）を推奨します。
 
 const CONFIG = {
-  // 通常瞑想中に再生するBGM用YouTube動画ID
+  // 瞑想「動画モード」で画面に表示しながら再生するBGM用YouTube動画ID。
+  // 動画の再生終了と同時にセッションも自動終了・記録される。
   MEDITATION_BGM_VIDEO_ID: 'WDT9nUa3Ok8',
+
+  // 瞑想「タイマーモード」で音声のみ再生するBGM用YouTube動画ID
+  // （チベタンシンギングボウルの倍音、瞑想と相性が良い長尺の音源）。
+  MEDITATION_TIMER_BGM_VIDEO_ID: '2X4RKVwvP0g',
 
   // NSDR実施時に再生する誘導ナレーション用YouTube動画ID
   NSDR_NARRATION_VIDEO_ID: 'AKGrmY8OSHM',

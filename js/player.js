@@ -61,6 +61,7 @@ const MeditationPlayer = (() => {
       let ytPlayer = null;
       let pendingVideoId = null;
       let readyCallback = null;
+      let endedCallback = null;
       let isReady = false;
       // プレイヤー準備完了前に呼ばれた操作を溜めておき、準備完了後に順に実行する
       // （「開始」ボタンのクリック＝ユーザー操作という文脈をplay()が取りこぼさないようにするため）
@@ -89,6 +90,14 @@ const MeditationPlayer = (() => {
               isReady = true;
               runQueuedAction();
               if (typeof readyCallback === 'function') readyCallback();
+            },
+            onStateChange: (e) => {
+              // 動画の再生終了（YT.PlayerState.ENDED === 0）を検知する。
+              // 「動画モード」でユーザーが再生時間＝瞑想時間として動画を選んだ場合、
+              // 動画終了と同時にセッションも自動終了させるために使う。
+              if (e.data === 0 && typeof endedCallback === 'function') {
+                endedCallback();
+              }
             },
             onError: (e) => {
               console.error('YouTube Player エラー', e);
@@ -135,6 +144,13 @@ const MeditationPlayer = (() => {
         onReady(cb) {
           readyCallback = cb;
           if (isReady) cb();
+        },
+        /**
+         * 動画の再生が最後まで終わったときに呼ばれるコールバックを登録する
+         * @param {Function} cb
+         */
+        onEnded(cb) {
+          endedCallback = cb;
         },
         isReady() {
           return isReady;

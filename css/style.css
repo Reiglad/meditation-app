@@ -74,7 +74,9 @@ body {
 body {
   margin: 0;
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP',
+  /* Upmind (https://upmind.co.jp/) と同じ書体構成。Web Fontが読み込めない場合は
+     システムフォントにフォールバックする。 */
+  font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
@@ -83,6 +85,15 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+/* 見出し・数字はUpmindと同じくWix Madefor Displayを優先（欧文のみ対応のため日本語部分はNoto Sans JPにフォールバック） */
+h1,
+.timer-display,
+.duration-btn,
+.stat-card .value {
+  font-family: 'Wix Madefor Display', 'Noto Sans JP', -apple-system, BlinkMacSystemFont,
+    'Hiragino Sans', sans-serif;
 }
 
 .app {
@@ -258,6 +269,90 @@ header.app-header h1 {
   font-weight: 700;
   text-align: center;
   margin: 0.5rem 0 0;
+}
+
+/* --- 瞑想：動画/タイマー モード切替 --- */
+.mode-toggle {
+  display: flex;
+  gap: 0.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.mode-toggle-btn {
+  flex: 1;
+  padding: 0.55rem 0.5rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mode-toggle-btn[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+/* --- 瞑想：タイマーモードの時間プリセット --- */
+.duration-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+.duration-btn {
+  padding: 0.9rem 1.1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  min-width: 4rem;
+}
+
+.duration-btn[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+.bgm-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 0.6rem;
+}
+
+.bgm-indicator[hidden] {
+  display: none;
+}
+
+/* タイマーモードのBGMは音声のみ使う想定のため、映像は画面上に見せない。
+   display:none にすると一部ブラウザで再生が止まることがあるため、
+   要素として存在はさせたまま視覚的にのみ隠す。 */
+.timer-bgm-player {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .timer-display {

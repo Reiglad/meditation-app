@@ -15,6 +15,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="瞑想記録" />
 
+<!-- Upmind (https://upmind.co.jp/) と同じ書体（本文: Noto Sans JP／見出し: Wix Madefor Display） -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Wix+Madefor+Display:wght@400;500;600&display=swap" rel="stylesheet" />
+
 <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -72,11 +77,40 @@
     <button class="back-link" data-target="home" type="button">← ホームに戻る</button>
     <p class="session-title">瞑想</p>
     <p id="offline-notice-meditation" class="notice warning" hidden>
-      オフラインのためBGMを再生できません。タイマーのみ利用できます。
+      オフラインのため動画・BGMを再生できません。タイマーのみ利用できます。
     </p>
-    <div class="player-wrap">
-      <div id="yt-player-meditation"></div>
+
+    <!-- 実施方法の切り替え：動画に合わせて行うか、タイマーで自分の時間を設定するか -->
+    <div class="mode-toggle" role="tablist">
+      <button id="btn-meditation-mode-video" class="mode-toggle-btn" type="button" role="tab" aria-selected="true">🎬 動画</button>
+      <button id="btn-meditation-mode-timer" class="mode-toggle-btn" type="button" role="tab" aria-selected="false">⏱️ タイマー</button>
     </div>
+
+    <!-- 動画モード：動画の再生に合わせて実施。動画終了と同時に自動終了・記録 -->
+    <div id="meditation-mode-video">
+      <div class="player-wrap">
+        <div id="yt-player-meditation"></div>
+      </div>
+    </div>
+
+    <!-- タイマーモード：時間を選んでBGM（音声）を聴きながら実施。時間経過で自動終了・記録 -->
+    <div id="meditation-mode-timer" hidden>
+      <div class="duration-picker">
+        <button class="duration-btn" data-min="5" type="button">5分</button>
+        <button class="duration-btn" data-min="10" type="button">10分</button>
+        <button class="duration-btn" data-min="15" type="button">15分</button>
+        <button class="duration-btn" data-min="20" type="button">20分</button>
+        <button class="duration-btn" data-min="30" type="button">30分</button>
+      </div>
+      <div class="bgm-indicator" id="timer-bgm-indicator" hidden>
+        <span aria-hidden="true">🎵</span>
+        <span>BGMを再生中（チベタンシンギングボウル）</span>
+      </div>
+      <div class="player-wrap timer-bgm-player">
+        <div id="yt-player-meditation-timer"></div>
+      </div>
+    </div>
+
     <div id="meditation-timer-display" class="timer-display">00:00</div>
     <div class="session-controls">
       <button id="btn-meditation-start" class="btn primary" type="button">開始</button>
@@ -208,36 +242,120 @@
   });
 
   // --- 瞑想画面の配線 ---
-  const meditationPlayer = MeditationPlayer.create('yt-player-meditation');
-  meditationPlayer.load(CONFIG.MEDITATION_BGM_VIDEO_ID);
+  // 「動画」モード：BGM動画を画面に表示しながら実施。動画の再生終了と同時に自動終了・記録する。
+  // 「タイマー」モード：時間を選んで開始。別のBGM（音声のみ）を流し、指定時間の経過で自動終了・記録する。
+  const meditationVideoPlayer = MeditationPlayer.create('yt-player-meditation');
+  meditationVideoPlayer.load(CONFIG.MEDITATION_BGM_VIDEO_ID);
+
+  const meditationTimerPlayer = MeditationPlayer.create('yt-player-meditation-timer');
+  meditationTimerPlayer.load(CONFIG.MEDITATION_TIMER_BGM_VIDEO_ID);
 
   const meditationDisplay = document.getElementById('meditation-timer-display');
   const meditationStartBtn = document.getElementById('btn-meditation-start');
   const meditationStopBtn = document.getElementById('btn-meditation-stop');
+  const meditationModeVideoBtn = document.getElementById('btn-meditation-mode-video');
+  const meditationModeTimerBtn = document.getElementById('btn-meditation-mode-timer');
+  const meditationModeVideoSection = document.getElementById('meditation-mode-video');
+  const meditationModeTimerSection = document.getElementById('meditation-mode-timer');
+  const timerBgmIndicator = document.getElementById('timer-bgm-indicator');
+  const durationBtns = Array.from(document.querySelectorAll('.duration-btn'));
+
+  let meditationMode = 'video'; // 'video' | 'timer'
+  let selectedTimerMinutes = null;
+
+  function updateMeditationStartEnabled() {
+    if (MeditationTimer.isRunning()) return; // 実施中はrunning状態のstateChangeコールバックに任せる
+    meditationStartBtn.disabled = meditationMode === 'timer' && selectedTimerMinutes === null;
+  }
+
+  function setMeditationMode(mode) {
+    if (MeditationTimer.isRunning()) return; // 実施中はモード切替不可
+    meditationMode = mode;
+    meditationModeVideoBtn.setAttribute('aria-selected', String(mode === 'video'));
+    meditationModeTimerBtn.setAttribute('aria-selected', String(mode === 'timer'));
+    meditationModeVideoSection.hidden = mode !== 'video';
+    meditationModeTimerSection.hidden = mode !== 'timer';
+    meditationDisplay.textContent = '00:00';
+    updateMeditationStartEnabled();
+  }
+
+  meditationModeVideoBtn.addEventListener('click', () => setMeditationMode('video'));
+  meditationModeTimerBtn.addEventListener('click', () => setMeditationMode('timer'));
+
+  durationBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (MeditationTimer.isRunning()) return;
+      selectedTimerMinutes = Number(btn.dataset.min);
+      durationBtns.forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
+      updateMeditationStartEnabled();
+    });
+  });
 
   MeditationTimer.setCallbacks(
-    (elapsedSec) => {
-      meditationDisplay.textContent = formatElapsed(elapsedSec);
+    (elapsedSec, targetSec) => {
+      // タイマーモード（targetSecあり）は残り時間のカウントダウン、
+      // 動画モード（targetSecなし）は経過時間のカウントアップを表示する。
+      const displaySec = targetSec !== null ? Math.max(0, targetSec - elapsedSec) : elapsedSec;
+      meditationDisplay.textContent = formatElapsed(displaySec);
     },
     (running) => {
-      meditationStartBtn.disabled = running;
       meditationStopBtn.disabled = !running;
+      meditationModeVideoBtn.disabled = running;
+      meditationModeTimerBtn.disabled = running;
+      durationBtns.forEach((b) => {
+        b.disabled = running;
+      });
+      timerBgmIndicator.hidden = !(running && meditationMode === 'timer');
+      if (!running) {
+        updateMeditationStartEnabled();
+      } else {
+        meditationStartBtn.disabled = true;
+      }
     }
   );
 
+  function finishMeditation(elapsedSec) {
+    if (meditationMode === 'video') {
+      meditationVideoPlayer.pause();
+    } else {
+      meditationTimerPlayer.pause();
+    }
+    meditationDisplay.textContent = '00:00';
+    if (elapsedSec > 0) {
+      const videoId =
+        meditationMode === 'video' ? CONFIG.MEDITATION_BGM_VIDEO_ID : CONFIG.MEDITATION_TIMER_BGM_VIDEO_ID;
+      finishMeditationSession(elapsedSec, videoId);
+    }
+  }
+
+  // 動画モード：動画が最後まで再生されたら自動的に終了・記録する
+  meditationVideoPlayer.onEnded(() => {
+    if (meditationMode === 'video' && MeditationTimer.isRunning()) {
+      const elapsedSec = MeditationTimer.stop();
+      finishMeditation(elapsedSec);
+    }
+  });
+
   meditationStartBtn.addEventListener('click', () => {
-    meditationPlayer.play(); // ユーザー操作の文脈内で呼ぶ（iOSの自動再生制限対策）
-    MeditationTimer.start();
+    if (meditationMode === 'video') {
+      meditationVideoPlayer.play(); // ユーザー操作の文脈内で呼ぶ（iOSの自動再生制限対策）
+      MeditationTimer.start();
+    } else {
+      if (selectedTimerMinutes === null) return;
+      meditationTimerPlayer.play();
+      MeditationTimer.start({
+        targetSec: selectedTimerMinutes * 60,
+        onComplete: (elapsedSec) => finishMeditation(elapsedSec),
+      });
+    }
   });
 
   meditationStopBtn.addEventListener('click', () => {
     const elapsedSec = MeditationTimer.stop();
-    meditationPlayer.pause();
-    meditationDisplay.textContent = '00:00';
-    if (elapsedSec > 0) {
-      finishMeditationSession(elapsedSec);
-    }
+    finishMeditation(elapsedSec);
   });
+
+  setMeditationMode('video');
 
   // --- NSDR画面の配線 ---
   const nsdrPlayer = MeditationPlayer.create('yt-player-nsdr');
