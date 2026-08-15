@@ -158,11 +158,11 @@ header.app-header h1 {
 }
 
 .quote-text::before {
-  content: '「';
+  content: '\201C';
 }
 
 .quote-text::after {
-  content: '」';
+  content: '\201D';
 }
 
 .home-actions {
