@@ -4,6 +4,9 @@
 瞑想（通常瞑想）とNSDR（Non-Sleep Deep Rest）を記録・実施できる、iPhone向けの個人用PWA。
 ホーム画面に追加してワンタップで開ける状態を目指す。完全無料構成で運用する。
 
+- 公開URL：https://reiglad.github.io/meditation-app/
+- リポジトリ：https://github.com/Reiglad/meditation-app （**Public**。GitHub Freeプランでは Private リポジトリで GitHub Pages が使えないため Public にしている。コードは公開されるが、アプリのデータはiPhone内のlocalStorageのみなので個人情報は含まれない）
+
 ## 技術スタック
 - Vanilla HTML / CSS / JavaScript（ビルドツール・フレームワーク不要）
 - PWA（`manifest.json` + Service Worker によるホーム画面追加・オフラインキャッシュ）
@@ -69,6 +72,7 @@ meditation-app/
 ## 既知の技術的制約
 - **バックグラウンドタイマーの精度**：iOS SafariのPWAは画面ロック中・バックグラウンド時にJSタイマー（`setInterval`等）の精度が落ちる、または停止しうる。正確な計測は画面ONでの利用を前提とし、`Date`オブジェクトの差分計算でフォアグラウンド復帰時に補正する設計にする。
 - **公開範囲**：GitHub PagesはURLを知っていれば誰でもアプリを開ける（認証なし）。ただしデータはiPhone内のlocalStorageのみに保存されるため、他人がアプリを開いても稲澤さんの記録が見えることはない。
+- **GitHub Pagesはリポジトリを Public にする必要がある**：GitHub Freeプランでは、Privateリポジトリに対してGitHub Pagesを有効化できない（Pro以上が必要）。そのためこのリポジトリは Public にしてある。ソースコード（config.jsのYouTube動画IDなど）は誰でも閲覧できる状態である点に留意する。
 - **Service Workerのキャッシュ更新**：`index.html` / `css` / `js`（`config.js`の動画ID変更を含む）/ `manifest.json` / `icons` のいずれかを更新したら、**必ず `sw.js` の `CACHE_NAME` の数字をインクリメントする**こと。Service Workerはファイル内容がバイト単位で前回と同一だと更新を検知せず、古いキャッシュ（差し替え前の動画ID等）を使い続けてしまう。CACHE_NAMEを変えるとsw.js自体のバイト内容が変わり、確実に新バージョンとして再キャッシュされる。iPhone実機では、それでも反映されない場合はSafariで一度サイトを開き直す（ホーム画面から削除して再追加、またはSafariの「Webサイトデータを消去」）ことで解消できる。
 
 ## 今後の拡張余地（現時点ではやらない）
