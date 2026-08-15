@@ -8,8 +8,7 @@
 
 <!-- PWA関連 -->
 <link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#f2ede4" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#16201f" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#16211c" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -19,6 +18,8 @@
 <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+<div id="bg-layer" class="bg-layer"></div>
+<div class="bg-overlay"></div>
 <div class="app">
   <!-- ホーム画面 -->
   <section id="screen-home" class="screen">
@@ -142,6 +143,8 @@
 <script src="js/nsdr.js"></script>
 <!-- js/quotes.js: 自分を大切にする名言のランダム表示 -->
 <script src="js/quotes.js"></script>
+<!-- js/backgrounds.js: 起動ごとに切り替わる自然写真の背景 -->
+<script src="js/backgrounds.js"></script>
 
 <script>
   // ------------------------------------------------------------
@@ -149,6 +152,9 @@
   // （storage.js / stats.js / player.js / timer.js / nsdr.js が
   //   公開する関数・オブジェクトのみを利用する薄いUI制御層）
   // ------------------------------------------------------------
+
+  // --- 背景画像（起動ごとにランダム切り替え） ---
+  document.getElementById('bg-layer').style.backgroundImage = `url(${getRandomBackground()})`;
 
   // --- 画面遷移 ---
   const screens = {

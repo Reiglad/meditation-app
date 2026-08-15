@@ -1,45 +1,46 @@
 /* style.css
-   Upmind (https://upmind.co.jp/) を参考にしたUI。
-   グリーン基調のグラデーション背景・白カード・ピル型バッジ・丸みのあるボタン。
-   prefers-color-scheme に連動したダーク/ライト自動切り替え。
+   自然写真の背景（起動ごとにランダム切り替え）に馴染む、すりガラス風（glassmorphism）UI。
+   カード類は半透明＋backdrop-filterで背景の写真を透かし、視認性はオーバーレイと
+   コントラストで確保する。prefers-color-scheme に連動したダーク/ライト自動切り替え。
    iPhone Safariのセーフエリア（ノッチ・ホームインジケータ）に対応。
 */
 
 :root {
-  --bg-top: #eaf3ec;
-  --bg-bottom: #ffffff;
-  --surface: #ffffff;
-  --text: #1f2e27;
-  --text-muted: #6f8078;
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.78);
   --accent: #2f6f5e;
-  --accent-soft: #dcefe4;
+  --accent-soft: rgba(220, 239, 228, 0.35);
   --accent-text: #ffffff;
-  --border: #e3ede6;
-  --danger: #c1594c;
-  --danger-soft: #f6e3df;
-  --ring-1: #f3c9d4;
-  --ring-2: #bcd8ee;
-  --ring-3: #a8dcc2;
-  --shadow: 0 8px 24px rgba(47, 111, 94, 0.1);
+  --surface: rgba(255, 255, 255, 0.16);
+  --border: rgba(255, 255, 255, 0.28);
+  --danger: #e0776a;
+  --danger-soft: rgba(224, 119, 106, 0.28);
+  --ring-1: rgba(243, 201, 212, 0.55);
+  --ring-2: rgba(188, 216, 238, 0.55);
+  --ring-3: rgba(168, 220, 194, 0.55);
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+  --blur: blur(18px);
+  --overlay: linear-gradient(
+    180deg,
+    rgba(10, 20, 16, 0.55) 0%,
+    rgba(10, 20, 16, 0.32) 35%,
+    rgba(10, 20, 16, 0.6) 100%
+  );
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-top: #16211c;
-    --bg-bottom: #0f1713;
-    --surface: #1c2a23;
-    --text: #eaf3ec;
-    --text-muted: #93a89c;
+    --overlay: linear-gradient(
+      180deg,
+      rgba(4, 8, 6, 0.72) 0%,
+      rgba(4, 8, 6, 0.5) 35%,
+      rgba(4, 8, 6, 0.78) 100%
+    );
+    --surface: rgba(10, 16, 13, 0.38);
+    --border: rgba(255, 255, 255, 0.14);
     --accent: #7fc6a4;
-    --accent-soft: #24382f;
+    --accent-soft: rgba(36, 56, 47, 0.45);
     --accent-text: #0f1713;
-    --border: #2a3b32;
-    --danger: #e0958a;
-    --danger-soft: #3a2622;
-    --ring-1: #4a3038;
-    --ring-2: #2b3c4a;
-    --ring-3: #274233;
-    --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }
 
@@ -52,13 +53,31 @@ body {
   height: 100%;
 }
 
+/* 起動ごとにランダムな自然写真を敷く背景レイヤー（js/backgrounds.js が背景画像を設定） */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* 写真の上にかける暗めのグラデーション。テキストの可読性を確保する */
+.bg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--overlay);
+}
+
 body {
   margin: 0;
-  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 340px);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP',
     sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   /* iPhoneのセーフエリア対応 */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -460,4 +479,19 @@ header.app-header h1 {
 
 .notice[hidden] {
   display: none;
+}
+
+/* --- すりガラス効果 ---
+   半透明の背景（--surface / --accent-soft）を持つカード類に、背景の自然写真を
+   透かすためのぼかしを一括で適用する。iOS Safari向けに -webkit- prefixも付与。 */
+.header-icon,
+.big-button,
+.quote-card,
+.stat-card,
+.history-item,
+.notice,
+.btn,
+.player-wrap {
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
 }

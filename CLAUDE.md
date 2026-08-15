@@ -24,13 +24,16 @@ meditation-app/
 ├── css/
 │   └── style.css
 ├── js/
-│   ├── timer.js      # 瞑想タイマー
-│   ├── nsdr.js        # NSDR再生
-│   ├── player.js       # YouTube IFrame Player 共通ラッパー
-│   ├── storage.js     # localStorage 読み書き
+│   ├── timer.js         # 瞑想タイマー
+│   ├── nsdr.js          # NSDR再生
+│   ├── player.js        # YouTube IFrame Player 共通ラッパー
+│   ├── storage.js       # localStorage 読み書き
 │   ├── stats.js         # 統計計算（連続日数・週間/月間合計）
-│   ├── config.js       # BGM/ナレーション動画ID等の設定
-│   └── quotes.js        # ホーム画面に表示する「自分を大切にする」言葉集
+│   ├── config.js        # BGM/ナレーション動画ID等の設定
+│   ├── quotes.js        # ホーム画面に表示する「自分を大切にする」言葉集
+│   └── backgrounds.js   # 起動ごとに切り替わる自然写真背景のファイルリスト
+├── images/
+│   └── nature/           # 背景写真15枚（Unsplash無料ライセンス、下記UI方針参照）
 └── icons/            # PWA用アイコン
 ```
 
@@ -70,8 +73,9 @@ meditation-app/
 - 将来クラウド同期（Firebase等）を追加しやすいよう、`storage.js` にデータ層を薄く分離しておく。
 
 ## UI方針
-- ダーク／ライト自動切り替え（`prefers-color-scheme` に連動。手動トグルは設けない）
-- [Upmind](https://upmind.co.jp/) を参考にしたビジュアルトーン：グリーン基調のグラデーション背景、白カード＋大きめ角丸＋軽い影、ピル型バッジ（連続日数など）、丸みのあるボタン。カラートークンは `css/style.css` の `:root` にまとめてある
+- **背景**：`js/backgrounds.js` の `NATURE_BACKGROUNDS`（滝・川・森・ジャングル・海・山・湖・星空・雪山・桜、計15枚）からアプリ起動のたびにランダムに1枚選び、全画面の背景写真として表示する（`#bg-layer`）。画像は `images/nature/` に同梱。すべてUnsplashの無料ライセンス（商用利用可・クレジット表記不要）で取得したもの。画像を追加する際も同じライセンス条件のものを選ぶこと
+- **すりガラス（glassmorphism）UI**：カード・ボタン類（`.big-button`, `.quote-card`, `.stat-card`, `.history-item`, `.notice`, `.btn` 等）は半透明の背景＋`backdrop-filter: blur()`で統一し、背景の自然写真を透かして見せる。可読性は `.bg-overlay`（写真の上にかける暗めのグラデーション）と白文字＋`text-shadow`で確保している
+- ダーク／ライト自動切り替え（`prefers-color-scheme` に連動。手動トグルは設けない）。ダークモードでは `.bg-overlay` をより暗く、カードの不透明度も調整
 - iPhone Safariのセーフエリア（ノッチ・ホームインジケータ）に対応（`viewport-fit=cover` + `env(safe-area-inset-*)`）
 - ホーム画面のみ挨拶ヘッダー（「こんにちは」＋タイトル＋連続日数バッジ）と名言カードを表示。瞑想／NSDR／記録画面はシンプルな見出し＋戻るリンクのみ
 
@@ -80,6 +84,7 @@ meditation-app/
 - **公開範囲**：GitHub PagesはURLを知っていれば誰でもアプリを開ける（認証なし）。ただしデータはiPhone内のlocalStorageのみに保存されるため、他人がアプリを開いても稲澤さんの記録が見えることはない。
 - **GitHub Pagesはリポジトリを Public にする必要がある**：GitHub Freeプランでは、Privateリポジトリに対してGitHub Pagesを有効化できない（Pro以上が必要）。そのためこのリポジトリは Public にしてある。ソースコード（config.jsのYouTube動画IDなど）は誰でも閲覧できる状態である点に留意する。
 - **Service Workerのキャッシュ更新**：`index.html` / `css` / `js`（`config.js`の動画ID変更を含む）/ `manifest.json` / `icons` のいずれかを更新したら、**必ず `sw.js` の `CACHE_NAME` の数字をインクリメントする**こと。Service Workerはファイル内容がバイト単位で前回と同一だと更新を検知せず、古いキャッシュ（差し替え前の動画ID等）を使い続けてしまう。CACHE_NAMEを変えるとsw.js自体のバイト内容が変わり、確実に新バージョンとして再キャッシュされる。iPhone実機では、それでも反映されない場合はSafariで一度サイトを開き直す（ホーム画面から削除して再追加、またはSafariの「Webサイトデータを消去」）ことで解消できる。GitHub Pages側のHTTPキャッシュが残ることもあり、その場合はハードリロード（PC）や上記のサイトデータ消去（iPhone）で解消する。
+- **背景写真は事前キャッシュ対象外**：`images/nature/*.webp`（15枚・合計約7.2MB）は`sw.js`の`PRECACHE_URLS`に含めていない。含めると初回ロード時に全部ダウンロードされ重くなるため、`fetch`ハンドラのcache-first戦略に任せ、実際に表示された画像から順にキャッシュされる設計にしている。画像を追加・入れ替える場合、この方針は維持すること。
 
 ## 今後の拡張余地（現時点ではやらない）
 - クラウド同期（Firebase / Supabase等の無料枠を想定）による複数端末対応
