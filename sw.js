@@ -10,7 +10,7 @@
 // installイベントが発火せず、古いキャッシュ（例: 差し替え前のconfig.jsの動画ID）が
 // 使われ続けてしまう。CACHE_NAMEを変えることでsw.js自体のバイト内容が変わり、
 // 確実に新しいバージョンとして認識・再キャッシュされる。
-const CACHE_NAME = 'meditation-app-cache-v5';
+const CACHE_NAME = 'meditation-app-cache-v6';
 
 const PRECACHE_URLS = [
   './',
@@ -23,6 +23,8 @@ const PRECACHE_URLS = [
   './js/player.js',
   './js/timer.js',
   './js/nsdr.js',
+  './js/push-config.js',
+  './js/push.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -87,6 +89,41 @@ self.addEventListener('fetch', (event) => {
           }
           return undefined;
         });
+    })
+  );
+});
+
+// --- Web Push通知 ---
+// worker/src/index.js からのPush（{ title, body } のJSON文字列）を受け取り、通知を表示する。
+self.addEventListener('push', (event) => {
+  let payload = { title: '瞑想記録', body: 'リマインダーの時間です' };
+  try {
+    if (event.data) {
+      payload = event.data.json();
+    }
+  } catch (e) {
+    console.error('Push payloadの解析に失敗しました', e);
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || '瞑想記録', {
+      body: payload.body || '',
+      icon: './icons/icon-192.png',
+      badge: './icons/icon-192.png',
+    })
+  );
+});
+
+// 通知タップ時：既存のクライアントがあればフォーカス、無ければ新規に開く
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow('./');
+      return undefined;
     })
   );
 });

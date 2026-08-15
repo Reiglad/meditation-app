@@ -38,6 +38,13 @@
     <p id="offline-notice-home" class="notice" hidden>
       現在オフラインです。BGM/ナレーションの再生にはインターネット接続が必要ですが、タイマーと記録の閲覧はオフラインでも利用できます。
     </p>
+    <p id="push-unsupported-notice" class="notice" hidden>
+      通知機能は、ホーム画面に追加してこのアプリを開いた場合のみ利用できます。
+    </p>
+    <button id="btn-enable-push" class="notice push-cta" type="button" hidden>
+      🔔 リマインダー通知を有効にする
+    </button>
+    <p id="push-status" class="notice" hidden></p>
     <div class="home-actions">
       <button id="btn-go-meditation" class="big-button primary" type="button">
         <span class="icon" aria-hidden="true">🌙</span>
@@ -137,6 +144,10 @@
 <script src="js/timer.js"></script>
 <!-- js/nsdr.js: NSDR再生 -->
 <script src="js/nsdr.js"></script>
+<!-- js/push-config.js: Web Push通知（Cloudflare Worker）の接続設定 -->
+<script src="js/push-config.js"></script>
+<!-- js/push.js: Web Push通知の購読・解除ロジック -->
+<script src="js/push.js"></script>
 
 <script>
   // ------------------------------------------------------------
@@ -337,6 +348,53 @@
       });
     });
   }
+
+  // --- Web Push通知（リマインダー）の初期化 ---
+  const pushUnsupportedNotice = document.getElementById('push-unsupported-notice');
+  const enablePushBtn = document.getElementById('btn-enable-push');
+  const pushStatus = document.getElementById('push-status');
+
+  function showPushStatus(message) {
+    pushStatus.textContent = message;
+    pushStatus.hidden = false;
+  }
+
+  async function refreshPushUi() {
+    if (!isPushSupported()) {
+      // iOS SafariはPushManager等のグローバルが未定義の場合があるため、
+      // 「非対応」と「ホーム画面未追加」を区別せず一律で案内する
+      pushUnsupportedNotice.hidden = false;
+      enablePushBtn.hidden = true;
+      return;
+    }
+    pushUnsupportedNotice.hidden = true;
+    const subscribed = await isSubscribedToPush();
+    if (subscribed) {
+      enablePushBtn.hidden = true;
+      showPushStatus('🔔 リマインダー通知は有効です');
+    } else {
+      enablePushBtn.hidden = false;
+      pushStatus.hidden = true;
+    }
+  }
+
+  enablePushBtn.addEventListener('click', async () => {
+    enablePushBtn.disabled = true;
+    const result = await subscribeToPush();
+    enablePushBtn.disabled = false;
+    if (result.ok) {
+      await refreshPushUi();
+      return;
+    }
+    const messages = {
+      unsupported: '通知機能はホーム画面に追加してから利用できます。',
+      denied: '通知が許可されませんでした。設定から通知を許可してください。',
+      'server-error': '通知の登録に失敗しました。時間を置いて再度お試しください。',
+    };
+    showPushStatus(messages[result.reason] || '通知の登録に失敗しました。');
+  });
+
+  refreshPushUi();
 
   // 初期表示
   showScreen('home');

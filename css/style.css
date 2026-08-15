@@ -429,6 +429,25 @@ header.app-header h1 {
   border-color: var(--danger-soft);
 }
 
+.notice.push-cta {
+  width: 100%;
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notice.push-cta:active {
+  opacity: 0.85;
+}
+
+.notice.push-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .notice[hidden] {
   display: none;
 }
