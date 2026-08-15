@@ -136,6 +136,35 @@ header.app-header h1 {
 }
 
 /* --- ホーム画面 --- */
+.quote-card {
+  background: var(--accent-soft);
+  border-radius: 18px;
+  padding: 1rem 1.2rem;
+  box-shadow: var(--shadow);
+}
+
+.quote-text {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.quote-text::before,
+.quote-text::after {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.quote-text::before {
+  content: '「';
+}
+
+.quote-text::after {
+  content: '」';
+}
+
 .home-actions {
   display: flex;
   flex-direction: column;
@@ -427,25 +456,6 @@ header.app-header h1 {
   color: var(--danger);
   background: var(--danger-soft);
   border-color: var(--danger-soft);
-}
-
-.notice.push-cta {
-  width: 100%;
-  color: var(--accent-text);
-  background: var(--accent);
-  border-color: var(--accent);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.notice.push-cta:active {
-  opacity: 0.85;
-}
-
-.notice.push-cta:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .notice[hidden] {
