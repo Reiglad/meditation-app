@@ -187,6 +187,10 @@
 <script src="js/quotes.js"></script>
 <!-- js/backgrounds.js: 起動ごとに切り替わる自然写真の背景 -->
 <script src="js/backgrounds.js"></script>
+<!-- js/chime.js: 瞑想・NSDR終了時の通知チャイム音 -->
+<script src="js/chime.js"></script>
+<!-- js/wakelock.js: 実施中の画面自動スリープ防止 -->
+<script src="js/wakelock.js"></script>
 
 <script>
   // ------------------------------------------------------------
@@ -248,6 +252,22 @@
     document.getElementById('offline-notice-meditation').hidden = false;
     document.getElementById('offline-notice-nsdr').hidden = false;
   });
+
+  // --- Media Session（ロック画面等でのメディア再生継続性を高めるための設定） ---
+  // 効果を保証するものではないが、OSに「このタブは現在メディアを再生中」と
+  // 伝えることで、バックグラウンド・画面ロック中に再生が打ち切られにくくなることを狙う。
+  function setMediaSessionPlaying(title) {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title,
+      artist: '瞑想記録',
+    });
+    navigator.mediaSession.playbackState = 'playing';
+  }
+  function clearMediaSessionPlaying() {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.playbackState = 'none';
+  }
 
   // --- 瞑想画面の配線 ---
   // 「動画」モード：BGM動画を画面に表示しながら実施。動画の再生終了と同時に自動終了・記録する。
@@ -331,7 +351,10 @@
       meditationTimerPlayer.pause();
     }
     meditationDisplay.textContent = '00:00';
+    WakeLockManager.disable();
+    clearMediaSessionPlaying();
     if (elapsedSec > 0) {
+      Chime.play();
       const videoId =
         meditationMode === 'video' ? CONFIG.MEDITATION_BGM_VIDEO_ID : CONFIG.MEDITATION_TIMER_BGM_VIDEO_ID;
       finishMeditationSession(elapsedSec, videoId);
@@ -347,9 +370,12 @@
   });
 
   meditationStartBtn.addEventListener('click', () => {
+    Chime.unlock(); // ユーザー操作の文脈内でAudioContextを解放（自動終了時にも鳴らせるようにする）
+    WakeLockManager.enable();
     if (meditationMode === 'video') {
       meditationVideoPlayer.play(); // ユーザー操作の文脈内で呼ぶ（iOSの自動再生制限対策）
       MeditationTimer.start();
+      setMediaSessionPlaying('瞑想（動画に合わせて）');
     } else {
       if (selectedTimerMinutes === null) return;
       meditationTimerPlayer.play();
@@ -357,6 +383,7 @@
         targetSec: selectedTimerMinutes * 60,
         onComplete: (elapsedSec) => finishMeditation(elapsedSec),
       });
+      setMediaSessionPlaying('瞑想（タイマー）');
     }
   });
 
@@ -388,15 +415,21 @@
   );
 
   nsdrStartBtn.addEventListener('click', () => {
+    Chime.unlock(); // ユーザー操作の文脈内でAudioContextを解放（終了時に鳴らせるようにする）
+    WakeLockManager.enable();
     nsdrPlayer.play();
     NsdrTimer.start();
+    setMediaSessionPlaying('NSDR');
   });
 
   nsdrStopBtn.addEventListener('click', () => {
     const elapsedSec = NsdrTimer.stop();
     nsdrPlayer.pause();
     nsdrDisplay.textContent = '00:00';
+    WakeLockManager.disable();
+    clearMediaSessionPlaying();
     if (elapsedSec > 0) {
+      Chime.play();
       finishNsdrSession(elapsedSec);
     }
   });
