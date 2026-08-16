@@ -41,12 +41,12 @@ meditation-app/
 
 瞑想とNSDRは別物として扱う。データ上も別セッション種別（`type`）で区別し、再生する音源（YouTube動画）も種別ごとに分離管理する。
 
-1. **瞑想（通常瞑想）**：実施方法を「動画」「タイマー」の2モードから選べる（`#screen-meditation` 内の `.mode-toggle`）
-   - **動画モード**：`config.js` の `MEDITATION_BGM_VIDEO_ID` を画面に表示しながら再生。動画の再生終了（`MeditationPlayer` の `onEnded`、YT.PlayerState.ENDED）と同時にセッションを自動終了・記録する。手動で「終了して記録」を押すこともできる
-   - **タイマーモード**：5/10/15/20/30分のプリセットから時間を選んで開始。`config.js` の `MEDITATION_TIMER_BGM_VIDEO_ID`（チベタンシンギングボウルの倍音、瞑想と相性の良い音源）を音声のみで再生（`.timer-bgm-player` で画面上は視覚的に隠す）。指定時間の経過（`MeditationTimer.start({ targetSec, onComplete })`）で自動終了・記録する
+1. **瞑想（通常瞑想）**：実施方法を「動画に合わせて」「タイマー」の2モードから選べる（`#screen-meditation` 内の `.mode-toggle`）。**どちらのモードも映像は画面に表示せず、音声のみ再生する**（`.player-wrap` は視覚的に隠す非表示レイアウト。再生中かどうかは `.bgm-indicator` で伝える）
+   - **動画に合わせてモード**：`config.js` の `MEDITATION_BGM_VIDEO_ID` を音声のみで再生。動画の再生終了（`MeditationPlayer` の `onEnded`、YT.PlayerState.ENDED）と同時にセッションを自動終了・記録する。手動で「終了して記録」を押すこともできる
+   - **タイマーモード**：5/10/15/20/30分のプリセットから時間を選んで開始。`config.js` の `MEDITATION_TIMER_BGM_VIDEO_ID`（チベタンシンギングボウルの倍音、瞑想と相性の良い音源）を音声のみで再生。指定時間の経過（`MeditationTimer.start({ targetSec, onComplete })`）で自動終了・記録する
    - 実施中はモード切替・プリセット選択を無効化する
 2. **NSDR**
-   - `config.js` の `NSDR_NARRATION_VIDEO_ID` に設定した誘導ナレーション用YouTube動画を埋め込み再生
+   - `config.js` の `NSDR_NARRATION_VIDEO_ID` に設定した誘導ナレーション用YouTube動画を、映像は表示せず音声のみ再生（`.bgm-indicator` で再生中を表示）
    - 実施したら記録として保存
    - 当面は固定1動画ずつの割り当て（複数候補からの選択は将来拡張）
 3. **記録閲覧**

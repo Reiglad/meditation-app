@@ -80,20 +80,24 @@
       オフラインのため動画・BGMを再生できません。タイマーのみ利用できます。
     </p>
 
-    <!-- 実施方法の切り替え：動画に合わせて行うか、タイマーで自分の時間を設定するか -->
+    <!-- 実施方法の切り替え：動画の尺に合わせて行うか、タイマーで自分の時間を設定するか（いずれも映像は表示せず音声のみ再生） -->
     <div class="mode-toggle" role="tablist">
-      <button id="btn-meditation-mode-video" class="mode-toggle-btn" type="button" role="tab" aria-selected="true">🎬 動画</button>
+      <button id="btn-meditation-mode-video" class="mode-toggle-btn" type="button" role="tab" aria-selected="true">🎵 動画に合わせて</button>
       <button id="btn-meditation-mode-timer" class="mode-toggle-btn" type="button" role="tab" aria-selected="false">⏱️ タイマー</button>
     </div>
 
-    <!-- 動画モード：動画の再生に合わせて実施。動画終了と同時に自動終了・記録 -->
+    <!-- 動画モード：動画の尺に合わせて実施。映像は表示せず音声のみ再生。動画終了と同時に自動終了・記録 -->
     <div id="meditation-mode-video">
+      <div class="bgm-indicator" id="video-bgm-indicator" hidden>
+        <span aria-hidden="true">🎵</span>
+        <span>音声を再生中</span>
+      </div>
       <div class="player-wrap">
         <div id="yt-player-meditation"></div>
       </div>
     </div>
 
-    <!-- タイマーモード：時間を選んでBGM（音声）を聴きながら実施。時間経過で自動終了・記録 -->
+    <!-- タイマーモード：時間を選んでBGM（音声のみ）を聴きながら実施。時間経過で自動終了・記録 -->
     <div id="meditation-mode-timer" hidden>
       <div class="duration-picker">
         <button class="duration-btn" data-min="5" type="button">5分</button>
@@ -106,7 +110,7 @@
         <span aria-hidden="true">🎵</span>
         <span>BGMを再生中（チベタンシンギングボウル）</span>
       </div>
-      <div class="player-wrap timer-bgm-player">
+      <div class="player-wrap">
         <div id="yt-player-meditation-timer"></div>
       </div>
     </div>
@@ -125,6 +129,10 @@
     <p id="offline-notice-nsdr" class="notice warning" hidden>
       オフラインのためナレーションを再生できません。タイマーのみ利用できます。
     </p>
+    <div class="bgm-indicator" id="nsdr-narration-indicator" hidden>
+      <span aria-hidden="true">🎵</span>
+      <span>ナレーションを再生中</span>
+    </div>
     <div class="player-wrap">
       <div id="yt-player-nsdr"></div>
     </div>
@@ -258,6 +266,7 @@
   const meditationModeVideoSection = document.getElementById('meditation-mode-video');
   const meditationModeTimerSection = document.getElementById('meditation-mode-timer');
   const timerBgmIndicator = document.getElementById('timer-bgm-indicator');
+  const videoBgmIndicator = document.getElementById('video-bgm-indicator');
   const durationBtns = Array.from(document.querySelectorAll('.duration-btn'));
 
   let meditationMode = 'video'; // 'video' | 'timer'
@@ -306,6 +315,7 @@
         b.disabled = running;
       });
       timerBgmIndicator.hidden = !(running && meditationMode === 'timer');
+      videoBgmIndicator.hidden = !(running && meditationMode === 'video');
       if (!running) {
         updateMeditationStartEnabled();
       } else {
@@ -364,6 +374,7 @@
   const nsdrDisplay = document.getElementById('nsdr-timer-display');
   const nsdrStartBtn = document.getElementById('btn-nsdr-start');
   const nsdrStopBtn = document.getElementById('btn-nsdr-stop');
+  const nsdrNarrationIndicator = document.getElementById('nsdr-narration-indicator');
 
   NsdrTimer.setCallbacks(
     (elapsedSec) => {
@@ -372,6 +383,7 @@
     (running) => {
       nsdrStartBtn.disabled = running;
       nsdrStopBtn.disabled = !running;
+      nsdrNarrationIndicator.hidden = !running;
     }
   );
 

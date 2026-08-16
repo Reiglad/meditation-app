@@ -343,18 +343,6 @@ header.app-header h1 {
   display: none;
 }
 
-/* タイマーモードのBGMは音声のみ使う想定のため、映像は画面上に見せない。
-   display:none にすると一部ブラウザで再生が止まることがあるため、
-   要素として存在はさせたまま視覚的にのみ隠す。 */
-.timer-bgm-player {
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-}
-
 .timer-display {
   font-size: 3rem;
   font-weight: 200;
@@ -365,12 +353,16 @@ header.app-header h1 {
   color: var(--accent);
 }
 
+/* 動画は画面に表示せず、すべて音声のみで再生する。display:none にすると
+   一部ブラウザで再生が止まることがあるため、要素として存在はさせたまま
+   視覚的にのみ隠す（再生中かどうかは .bgm-indicator で伝える）。 */
 .player-wrap {
-  border-radius: 20px;
+  position: absolute;
+  width: 2px;
+  height: 2px;
   overflow: hidden;
-  background: #000;
-  aspect-ratio: 16 / 9;
-  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .player-wrap iframe,
@@ -585,8 +577,7 @@ header.app-header h1 {
 .stat-card,
 .history-item,
 .notice,
-.btn,
-.player-wrap {
+.btn {
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
 }
