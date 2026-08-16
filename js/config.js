@@ -18,4 +18,9 @@ const CONFIG = {
 
   // NSDR実施時に再生する誘導ナレーション音声（固定1種類）
   NSDR_NARRATION_AUDIO: { id: 'nsdr-narration', label: 'NSDRナレーション', file: 'audio/nsdr-narration.mp3' },
+
+  // 瞑想「そのまま寝るモード」で選べる時間プリセット（分）。
+  // 選んだ時間ちょうどで無音になるよう、SLEEP_FADE_OUT_SEC分だけ前倒しでフェードアウトを始める。
+  SLEEP_DURATION_PRESETS_MIN: [15, 30, 45, 60],
+  SLEEP_FADE_OUT_SEC: 30,
 };

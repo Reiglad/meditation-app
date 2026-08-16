@@ -46,9 +46,10 @@ meditation-app/
 
 瞑想とNSDRは別物として扱う。データ上も別セッション種別（`type`）で区別し、再生する音声も種別ごとに分離管理する。
 
-1. **瞑想（通常瞑想）**：`config.js` の `MEDITATION_AUDIO_OPTIONS`（3種類：夜瞑想 `night-meditation` / チベタン `tibetan-bowl` / 瞑想BGM `meditation-bgm`）から音声を選べる（`.audio-picker`）。実施方法は「選んだ音声に合わせて」「タイマー」の2モードから選べる（`.mode-toggle`）
+1. **瞑想（通常瞑想）**：`config.js` の `MEDITATION_AUDIO_OPTIONS`（3種類：夜瞑想 `night-meditation` / チベタン `tibetan-bowl` / 瞑想BGM `meditation-bgm`）から音声を選べる（`.audio-picker`）。実施方法は「選んだ音声に合わせて」「タイマー」「そのまま寝る」の3モードから選べる（`.mode-toggle`）
    - **音声に合わせてモード**：選んだ音声ファイルを最後まで再生。再生終了（`AudioPlayer` の `onEnded`）と同時にセッションを自動終了・記録する。手動で「終了して記録」を押すこともできる
    - **タイマーモード**：5/10/15/20/30分のプリセットから時間を選んで開始。選んだ音声をループ再生しながら、指定時間の経過（`MeditationTimer.start({ targetSec, onComplete })`）で自動終了・記録する
+   - **そのまま寝るモード**：`config.js` の `SLEEP_DURATION_PRESETS_MIN`（15/30/45/60分）から時間を選んで開始。選んだ音声をループ再生し、`MeditationTimer`のtickコールバック内で残り時間が`SLEEP_FADE_OUT_SEC`（30秒）以下になったタイミングを検知して`AudioPlayer.fadeOutAndStop()`を呼び、選んだ時間ちょうどで無音になるよう音量を徐々に下げていく。目標時間到達で自動終了・記録する（そのまま眠ってしまってよい想定の機能）
    - 実施中は音声選択・モード切替・プリセット選択を無効化する
    - 音声はすべて `<audio id="meditation-audio">` 要素（画面には表示せず、再生中かどうかは `.bgm-indicator` で伝える）
 2. **NSDR**

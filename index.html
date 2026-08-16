@@ -87,10 +87,12 @@
       <button class="audio-picker-btn" data-audio="meditation-bgm" type="button" role="tab" aria-selected="false">🎼 瞑想BGM</button>
     </div>
 
-    <!-- 実施方法の切り替え：選んだ音声の長さに合わせて行うか、タイマーで自分の時間を設定するか -->
+    <!-- 実施方法の切り替え：選んだ音声の長さに合わせて行うか、タイマーで自分の時間を設定するか、
+         そのまま眠ってしまってよい「そのまま寝る」で行うか -->
     <div class="mode-toggle" role="tablist">
-      <button id="btn-meditation-mode-audio" class="mode-toggle-btn" type="button" role="tab" aria-selected="true">🎵 音声に合わせて</button>
+      <button id="btn-meditation-mode-audio" class="mode-toggle-btn" type="button" role="tab" aria-selected="true">🎵 音声</button>
       <button id="btn-meditation-mode-timer" class="mode-toggle-btn" type="button" role="tab" aria-selected="false">⏱️ タイマー</button>
+      <button id="btn-meditation-mode-sleep" class="mode-toggle-btn" type="button" role="tab" aria-selected="false">😴 寝る</button>
     </div>
 
     <!-- タイマーモードのみ：時間プリセット。選んだ音声をループ再生しながら計測する -->
@@ -102,6 +104,18 @@
         <button class="duration-btn" data-min="20" type="button">20分</button>
         <button class="duration-btn" data-min="30" type="button">30分</button>
       </div>
+    </div>
+
+    <!-- そのまま寝るモードのみ：スリープタイマーの時間プリセット。選んだ音声をループ再生し、
+         選んだ時間ちょうどで無音になるよう少し前からフェードアウトして自動的に停止・記録する -->
+    <div id="meditation-mode-sleep" hidden>
+      <div class="duration-picker">
+        <button class="duration-btn" data-min="15" type="button">15分</button>
+        <button class="duration-btn" data-min="30" type="button">30分</button>
+        <button class="duration-btn" data-min="45" type="button">45分</button>
+        <button class="duration-btn" data-min="60" type="button">60分</button>
+      </div>
+      <p class="sleep-hint">選んだ時間の少し前から音量が徐々に下がり、自動的に停止・記録されます。そのまま眠ってしまって大丈夫です。</p>
     </div>
 
     <div class="bgm-indicator" id="meditation-audio-indicator" hidden>
@@ -275,8 +289,9 @@
 
   // --- 瞑想画面の配線 ---
   // 音声は3種類（夜瞑想／チベタン／瞑想BGM）から選択でき、実施方法は
-  // 「選んだ音声の長さに合わせて行う」「タイマーで自分の時間を設定する（音声はループ再生）」の
-  // 2モードから選べる。<audio>要素での自前ホスティング再生に統一したことで、
+  // 「選んだ音声の長さに合わせて行う」「タイマーで自分の時間を設定する」
+  // 「そのまま寝る（スリープタイマー、時間の少し前からフェードアウトして自動停止）」の
+  // 3モードから選べる。<audio>要素での自前ホスティング再生に統一したことで、
   // YouTube埋め込みと違い画面ロック中もMedia Session経由で再生が継続しやすくなっている。
   const meditationAudioPlayer = AudioPlayer.create('meditation-audio');
 
@@ -285,19 +300,30 @@
   const meditationStopBtn = document.getElementById('btn-meditation-stop');
   const meditationModeAudioBtn = document.getElementById('btn-meditation-mode-audio');
   const meditationModeTimerBtn = document.getElementById('btn-meditation-mode-timer');
+  const meditationModeSleepBtn = document.getElementById('btn-meditation-mode-sleep');
   const meditationModeTimerSection = document.getElementById('meditation-mode-timer');
+  const meditationModeSleepSection = document.getElementById('meditation-mode-sleep');
   const meditationAudioIndicator = document.getElementById('meditation-audio-indicator');
   const meditationAudioIndicatorLabel = document.getElementById('meditation-audio-indicator-label');
   const audioPickerBtns = Array.from(document.querySelectorAll('.audio-picker-btn'));
-  const durationBtns = Array.from(document.querySelectorAll('.duration-btn'));
+  const timerDurationBtns = Array.from(document.querySelectorAll('#meditation-mode-timer .duration-btn'));
+  const sleepDurationBtns = Array.from(document.querySelectorAll('#meditation-mode-sleep .duration-btn'));
 
-  let meditationMode = 'audio'; // 'audio' | 'timer'
+  let meditationMode = 'audio'; // 'audio' | 'timer' | 'sleep'
   let selectedTimerMinutes = null;
+  let selectedSleepMinutes = null;
   let selectedAudioOption = CONFIG.MEDITATION_AUDIO_OPTIONS[0]; // 初期選択は先頭（夜瞑想）
+  let sleepFadeStarted = false; // そのまま寝るモードでフェードアウトを開始済みか
 
   function updateMeditationStartEnabled() {
     if (MeditationTimer.isRunning()) return; // 実施中はrunning状態のstateChangeコールバックに任せる
-    meditationStartBtn.disabled = meditationMode === 'timer' && selectedTimerMinutes === null;
+    if (meditationMode === 'timer') {
+      meditationStartBtn.disabled = selectedTimerMinutes === null;
+    } else if (meditationMode === 'sleep') {
+      meditationStartBtn.disabled = selectedSleepMinutes === null;
+    } else {
+      meditationStartBtn.disabled = false;
+    }
   }
 
   function setMeditationMode(mode) {
@@ -305,7 +331,9 @@
     meditationMode = mode;
     meditationModeAudioBtn.setAttribute('aria-selected', String(mode === 'audio'));
     meditationModeTimerBtn.setAttribute('aria-selected', String(mode === 'timer'));
+    meditationModeSleepBtn.setAttribute('aria-selected', String(mode === 'sleep'));
     meditationModeTimerSection.hidden = mode !== 'timer';
+    meditationModeSleepSection.hidden = mode !== 'sleep';
     meditationDisplay.textContent = '00:00';
     updateMeditationStartEnabled();
   }
@@ -318,6 +346,7 @@
 
   meditationModeAudioBtn.addEventListener('click', () => setMeditationMode('audio'));
   meditationModeTimerBtn.addEventListener('click', () => setMeditationMode('timer'));
+  meditationModeSleepBtn.addEventListener('click', () => setMeditationMode('sleep'));
 
   audioPickerBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -326,30 +355,53 @@
     });
   });
 
-  durationBtns.forEach((btn) => {
+  timerDurationBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       if (MeditationTimer.isRunning()) return;
       selectedTimerMinutes = Number(btn.dataset.min);
-      durationBtns.forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
+      timerDurationBtns.forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
+      updateMeditationStartEnabled();
+    });
+  });
+
+  sleepDurationBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (MeditationTimer.isRunning()) return;
+      selectedSleepMinutes = Number(btn.dataset.min);
+      sleepDurationBtns.forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
       updateMeditationStartEnabled();
     });
   });
 
   MeditationTimer.setCallbacks(
     (elapsedSec, targetSec) => {
-      // タイマーモード（targetSecあり）は残り時間のカウントダウン、
+      // タイマー／そのまま寝るモード（targetSecあり）は残り時間のカウントダウン、
       // 音声に合わせてモード（targetSecなし）は経過時間のカウントアップを表示する。
       const displaySec = targetSec !== null ? Math.max(0, targetSec - elapsedSec) : elapsedSec;
       meditationDisplay.textContent = formatElapsed(displaySec);
+
+      // そのまま寝るモード：残り時間がフェード秒数以下になったら音量フェードアウトを開始し、
+      // 選んだ時間ちょうどで無音になるようにする（記録・タイマー終了はtargetSec到達時のonComplete側で行う）
+      if (meditationMode === 'sleep' && targetSec !== null && !sleepFadeStarted) {
+        const remainingSec = targetSec - elapsedSec;
+        if (remainingSec <= CONFIG.SLEEP_FADE_OUT_SEC) {
+          sleepFadeStarted = true;
+          meditationAudioPlayer.fadeOutAndStop(Math.max(remainingSec, 1) * 1000);
+        }
+      }
     },
     (running) => {
       meditationStopBtn.disabled = !running;
       meditationModeAudioBtn.disabled = running;
       meditationModeTimerBtn.disabled = running;
+      meditationModeSleepBtn.disabled = running;
       audioPickerBtns.forEach((b) => {
         b.disabled = running;
       });
-      durationBtns.forEach((b) => {
+      timerDurationBtns.forEach((b) => {
+        b.disabled = running;
+      });
+      sleepDurationBtns.forEach((b) => {
         b.disabled = running;
       });
       meditationAudioIndicator.hidden = !running;
@@ -362,7 +414,7 @@
   );
 
   function finishMeditation(elapsedSec) {
-    meditationAudioPlayer.pause();
+    meditationAudioPlayer.pause(); // 進行中のフェードアウトがあればキャンセルされる
     meditationDisplay.textContent = '00:00';
     WakeLockManager.disable();
     clearMediaSessionPlaying();
@@ -390,7 +442,7 @@
       meditationAudioPlayer.play(); // ユーザー操作の文脈内で呼ぶ（iOSの自動再生制限対策）
       MeditationTimer.start();
       setMediaSessionPlaying(`瞑想（${selectedAudioOption.label}）`, meditationAudioPlayer);
-    } else {
+    } else if (meditationMode === 'timer') {
       if (selectedTimerMinutes === null) return;
       meditationAudioPlayer.setLoop(true); // タイマーの目標時間まで音声を流し続ける
       meditationAudioPlayer.play();
@@ -399,6 +451,18 @@
         onComplete: (elapsedSec) => finishMeditation(elapsedSec),
       });
       setMediaSessionPlaying(`瞑想（${selectedAudioOption.label}・タイマー）`, meditationAudioPlayer);
+    } else {
+      // そのまま寝るモード：選んだ時間を目標に音声をループ再生。時間ちょうどで自動終了・記録する
+      // （フェードアウトの開始はMeditationTimerのtickコールバック側で行う）
+      if (selectedSleepMinutes === null) return;
+      sleepFadeStarted = false;
+      meditationAudioPlayer.setLoop(true);
+      meditationAudioPlayer.play();
+      MeditationTimer.start({
+        targetSec: selectedSleepMinutes * 60,
+        onComplete: (elapsedSec) => finishMeditation(elapsedSec),
+      });
+      setMediaSessionPlaying(`瞑想（${selectedAudioOption.label}・そのまま寝る）`, meditationAudioPlayer);
     }
   });
 

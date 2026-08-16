@@ -361,6 +361,15 @@ header.app-header h1 {
   border-color: var(--accent);
 }
 
+/* --- 瞑想：そのまま寝るモードの説明文 --- */
+.sleep-hint {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0.6rem 0 0;
+  line-height: 1.5;
+}
+
 .bgm-indicator {
   display: flex;
   align-items: center;
