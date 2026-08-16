@@ -1,21 +1,19 @@
 // sw.js
 // アプリシェルの簡易オフラインキャッシュ用 Service Worker。
-// YouTube IFrame Player APIなど外部（他オリジン）へのリクエストはキャッシュせず、
-// 常にネットワークへそのまま流す（キャッシュ対象は同一オリジンの静的ファイルのみ）。
 //
 // 【重要・運用ルール】
 // index.html / css / js / manifest.json / icons など PRECACHE_URLS 内のファイルを
 // 1文字でも変更したら、必ず下記 CACHE_NAME の末尾の数字（vN）をインクリメントすること。
 // Service Workerはファイル内容がバイト単位で前回と一致すると「更新なし」と判断し、
-// installイベントが発火せず、古いキャッシュ（例: 差し替え前のconfig.jsの動画ID）が
+// installイベントが発火せず、古いキャッシュ（例: 差し替え前のconfig.jsの内容）が
 // 使われ続けてしまう。CACHE_NAMEを変えることでsw.js自体のバイト内容が変わり、
 // 確実に新しいバージョンとして認識・再キャッシュされる。
-const CACHE_NAME = 'meditation-app-cache-v12';
+const CACHE_NAME = 'meditation-app-cache-v13';
 
-// 背景写真（images/nature/*.webp）はここには含めない。
-// 起動のたびランダムな1枚だけを表示するため、事前キャッシュすると初回ロードが
-// 重くなる（15枚・約7MB）。fetchハンドラのcache-first戦略により、
-// 一度表示された画像から順にキャッシュされていく。
+// 背景写真（images/nature/*.webp）・音声ファイル（audio/*.mp3）はここには含めない。
+// 事前キャッシュすると初回ロードが重くなる（背景写真15枚・約7MB、音声4本・約77MB）ため、
+// fetchハンドラのcache-first戦略に任せ、実際に表示・再生されたものから順にキャッシュされる。
+// つまり音声は「一度オンラインで再生済みのものはオフラインでも再生できる」設計になる。
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -24,7 +22,7 @@ const PRECACHE_URLS = [
   './js/config.js',
   './js/storage.js',
   './js/stats.js',
-  './js/player.js',
+  './js/audio-player.js',
   './js/timer.js',
   './js/nsdr.js',
   './js/quotes.js',
@@ -64,7 +62,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // 他オリジン（YouTube等）へのリクエストはキャッシュ対象外。ネットワークにそのまま委ねる。
+  // 他オリジン（Google Fonts等）へのリクエストはキャッシュ対象外。ネットワークにそのまま委ねる。
   if (url.origin !== self.location.origin) {
     return;
   }

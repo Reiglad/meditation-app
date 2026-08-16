@@ -68,6 +68,6 @@ function finishNsdrSession(elapsedSec) {
   return addSession({
     type: 'nsdr',
     durationSec: elapsedSec,
-    youtubeVideoId: CONFIG.NSDR_NARRATION_VIDEO_ID,
+    audioId: CONFIG.NSDR_NARRATION_AUDIO.id,
   });
 }

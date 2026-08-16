@@ -271,7 +271,39 @@ header.app-header h1 {
   margin: 0.5rem 0 0;
 }
 
-/* --- 瞑想：動画/タイマー モード切替 --- */
+/* --- 瞑想：音声選択（3種類） --- */
+.audio-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.audio-picker-btn {
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.audio-picker-btn[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+.audio-picker-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- 瞑想：音声に合わせて/タイマー モード切替 --- */
 .mode-toggle {
   display: flex;
   gap: 0.4rem;
@@ -353,22 +385,16 @@ header.app-header h1 {
   color: var(--accent);
 }
 
-/* 動画は画面に表示せず、すべて音声のみで再生する。display:none にすると
-   一部ブラウザで再生が止まることがあるため、要素として存在はさせたまま
-   視覚的にのみ隠す（再生中かどうかは .bgm-indicator で伝える）。 */
-.player-wrap {
+/* <audio>要素は画面に表示しない。display:none にすると一部ブラウザで
+   再生が止まることがあるため、要素として存在はさせたまま視覚的にのみ隠す
+   （再生中かどうかは .bgm-indicator で伝える）。 */
+.audio-el {
   position: absolute;
-  width: 2px;
-  height: 2px;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
-}
-
-.player-wrap iframe,
-.player-wrap > div {
-  width: 100%;
-  height: 100%;
 }
 
 .session-controls {

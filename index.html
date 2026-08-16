@@ -42,7 +42,7 @@
       </div>
     </header>
     <p id="offline-notice-home" class="notice" hidden>
-      現在オフラインです。BGM/ナレーションの再生にはインターネット接続が必要ですが、タイマーと記録の閲覧はオフラインでも利用できます。
+      現在オフラインです。一度再生したことのある音声はそのまま利用できます。タイマーや記録の閲覧はオフラインでも問題なく利用できます。
     </p>
     <div id="quote-card" class="quote-card">
       <p id="quote-text" class="quote-text"></p>
@@ -77,27 +77,23 @@
     <button class="back-link" data-target="home" type="button">← ホームに戻る</button>
     <p class="session-title">瞑想</p>
     <p id="offline-notice-meditation" class="notice warning" hidden>
-      オフラインのため動画・BGMを再生できません。タイマーのみ利用できます。
+      オフラインです。一度再生したことのある音声はそのまま利用できますが、未再生の音声は読み込めません。
     </p>
 
-    <!-- 実施方法の切り替え：動画の尺に合わせて行うか、タイマーで自分の時間を設定するか（いずれも映像は表示せず音声のみ再生） -->
+    <!-- 音声を選ぶ（3種類） -->
+    <div class="audio-picker" role="tablist">
+      <button class="audio-picker-btn" data-audio="night-meditation" type="button" role="tab" aria-selected="true">🌙 夜瞑想</button>
+      <button class="audio-picker-btn" data-audio="tibetan-bowl" type="button" role="tab" aria-selected="false">🎐 チベタン</button>
+      <button class="audio-picker-btn" data-audio="meditation-bgm" type="button" role="tab" aria-selected="false">🎼 瞑想BGM</button>
+    </div>
+
+    <!-- 実施方法の切り替え：選んだ音声の長さに合わせて行うか、タイマーで自分の時間を設定するか -->
     <div class="mode-toggle" role="tablist">
-      <button id="btn-meditation-mode-video" class="mode-toggle-btn" type="button" role="tab" aria-selected="true">🎵 動画に合わせて</button>
+      <button id="btn-meditation-mode-audio" class="mode-toggle-btn" type="button" role="tab" aria-selected="true">🎵 音声に合わせて</button>
       <button id="btn-meditation-mode-timer" class="mode-toggle-btn" type="button" role="tab" aria-selected="false">⏱️ タイマー</button>
     </div>
 
-    <!-- 動画モード：動画の尺に合わせて実施。映像は表示せず音声のみ再生。動画終了と同時に自動終了・記録 -->
-    <div id="meditation-mode-video">
-      <div class="bgm-indicator" id="video-bgm-indicator" hidden>
-        <span aria-hidden="true">🎵</span>
-        <span>音声を再生中</span>
-      </div>
-      <div class="player-wrap">
-        <div id="yt-player-meditation"></div>
-      </div>
-    </div>
-
-    <!-- タイマーモード：時間を選んでBGM（音声のみ）を聴きながら実施。時間経過で自動終了・記録 -->
+    <!-- タイマーモードのみ：時間プリセット。選んだ音声をループ再生しながら計測する -->
     <div id="meditation-mode-timer" hidden>
       <div class="duration-picker">
         <button class="duration-btn" data-min="5" type="button">5分</button>
@@ -106,14 +102,14 @@
         <button class="duration-btn" data-min="20" type="button">20分</button>
         <button class="duration-btn" data-min="30" type="button">30分</button>
       </div>
-      <div class="bgm-indicator" id="timer-bgm-indicator" hidden>
-        <span aria-hidden="true">🎵</span>
-        <span>BGMを再生中（チベタンシンギングボウル）</span>
-      </div>
-      <div class="player-wrap">
-        <div id="yt-player-meditation-timer"></div>
-      </div>
     </div>
+
+    <div class="bgm-indicator" id="meditation-audio-indicator" hidden>
+      <span aria-hidden="true">🎵</span>
+      <span id="meditation-audio-indicator-label">音声を再生中</span>
+    </div>
+    <!-- 音声ファイルは <audio> 要素で再生する。画面には表示せず音声のみ流す -->
+    <audio id="meditation-audio" class="audio-el" preload="none" playsinline></audio>
 
     <div id="meditation-timer-display" class="timer-display">00:00</div>
     <div class="session-controls">
@@ -127,15 +123,13 @@
     <button class="back-link" data-target="home" type="button">← ホームに戻る</button>
     <p class="session-title">NSDR</p>
     <p id="offline-notice-nsdr" class="notice warning" hidden>
-      オフラインのためナレーションを再生できません。タイマーのみ利用できます。
+      オフラインです。一度再生したことのあるナレーションはそのまま利用できますが、未再生の場合は読み込めません。
     </p>
     <div class="bgm-indicator" id="nsdr-narration-indicator" hidden>
       <span aria-hidden="true">🎵</span>
       <span>ナレーションを再生中</span>
     </div>
-    <div class="player-wrap">
-      <div id="yt-player-nsdr"></div>
-    </div>
+    <audio id="nsdr-audio" class="audio-el" preload="none" playsinline></audio>
     <div id="nsdr-timer-display" class="timer-display">00:00</div>
     <div class="session-controls">
       <button id="btn-nsdr-start" class="btn primary" type="button">開始</button>
@@ -171,14 +165,14 @@
   </section>
 </div>
 
-<!-- js/config.js: BGM/ナレーション動画IDの設定 -->
+<!-- js/config.js: 瞑想・NSDRで使う音声ファイルの設定 -->
 <script src="js/config.js"></script>
 <!-- js/storage.js: localStorage読み書き -->
 <script src="js/storage.js"></script>
 <!-- js/stats.js: 統計計算 -->
 <script src="js/stats.js"></script>
-<!-- js/player.js: YouTube IFrame Player 共通ラッパー -->
-<script src="js/player.js"></script>
+<!-- js/audio-player.js: <audio>要素の共通ラッパー -->
+<script src="js/audio-player.js"></script>
 <!-- js/timer.js: 瞑想タイマー -->
 <script src="js/timer.js"></script>
 <!-- js/nsdr.js: NSDR再生 -->
@@ -195,7 +189,7 @@
 <script>
   // ------------------------------------------------------------
   // アプリ全体の初期化・画面遷移・イベント配線
-  // （storage.js / stats.js / player.js / timer.js / nsdr.js が
+  // （storage.js / stats.js / audio-player.js / timer.js / nsdr.js が
   //   公開する関数・オブジェクトのみを利用する薄いUI制御層）
   // ------------------------------------------------------------
 
@@ -247,50 +241,59 @@
   window.addEventListener('offline', updateOfflineNotices);
   updateOfflineNotices();
 
-  // YouTube IFrame Player API自体の読み込みに失敗した場合も同様に警告する
-  MeditationPlayer.onApiUnavailable(() => {
-    document.getElementById('offline-notice-meditation').hidden = false;
-    document.getElementById('offline-notice-nsdr').hidden = false;
-  });
-
-  // --- Media Session（ロック画面等でのメディア再生継続性を高めるための設定） ---
-  // 効果を保証するものではないが、OSに「このタブは現在メディアを再生中」と
-  // 伝えることで、バックグラウンド・画面ロック中に再生が打ち切られにくくなることを狙う。
-  function setMediaSessionPlaying(title) {
+  // --- Media Session（画面ロック中の再生継続・ロック画面コントロール用の設定） ---
+  // <audio>要素での自前ホスティング再生（同一オリジン）は、YouTube埋め込みと違い
+  // Media Session経由のバックグラウンド再生にiOS Safariが正式対応している。
+  // play/pauseのアクションハンドラを設定し、ロック画面からの一時停止・再開にも対応する。
+  let activeAudioPlayer = null;
+  function setMediaSessionPlaying(title, player) {
+    activeAudioPlayer = player;
     if (!('mediaSession' in navigator)) return;
     navigator.mediaSession.metadata = new MediaMetadata({
       title,
       artist: '瞑想記録',
     });
     navigator.mediaSession.playbackState = 'playing';
+    try {
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (activeAudioPlayer) activeAudioPlayer.play();
+        navigator.mediaSession.playbackState = 'playing';
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        if (activeAudioPlayer) activeAudioPlayer.pause();
+        navigator.mediaSession.playbackState = 'paused';
+      });
+    } catch (e) {
+      // 非対応のアクション種別。無視して問題ない。
+    }
   }
   function clearMediaSessionPlaying() {
+    activeAudioPlayer = null;
     if (!('mediaSession' in navigator)) return;
     navigator.mediaSession.playbackState = 'none';
   }
 
   // --- 瞑想画面の配線 ---
-  // 「動画」モード：BGM動画を画面に表示しながら実施。動画の再生終了と同時に自動終了・記録する。
-  // 「タイマー」モード：時間を選んで開始。別のBGM（音声のみ）を流し、指定時間の経過で自動終了・記録する。
-  const meditationVideoPlayer = MeditationPlayer.create('yt-player-meditation');
-  meditationVideoPlayer.load(CONFIG.MEDITATION_BGM_VIDEO_ID);
-
-  const meditationTimerPlayer = MeditationPlayer.create('yt-player-meditation-timer');
-  meditationTimerPlayer.load(CONFIG.MEDITATION_TIMER_BGM_VIDEO_ID);
+  // 音声は3種類（夜瞑想／チベタン／瞑想BGM）から選択でき、実施方法は
+  // 「選んだ音声の長さに合わせて行う」「タイマーで自分の時間を設定する（音声はループ再生）」の
+  // 2モードから選べる。<audio>要素での自前ホスティング再生に統一したことで、
+  // YouTube埋め込みと違い画面ロック中もMedia Session経由で再生が継続しやすくなっている。
+  const meditationAudioPlayer = AudioPlayer.create('meditation-audio');
 
   const meditationDisplay = document.getElementById('meditation-timer-display');
   const meditationStartBtn = document.getElementById('btn-meditation-start');
   const meditationStopBtn = document.getElementById('btn-meditation-stop');
-  const meditationModeVideoBtn = document.getElementById('btn-meditation-mode-video');
+  const meditationModeAudioBtn = document.getElementById('btn-meditation-mode-audio');
   const meditationModeTimerBtn = document.getElementById('btn-meditation-mode-timer');
-  const meditationModeVideoSection = document.getElementById('meditation-mode-video');
   const meditationModeTimerSection = document.getElementById('meditation-mode-timer');
-  const timerBgmIndicator = document.getElementById('timer-bgm-indicator');
-  const videoBgmIndicator = document.getElementById('video-bgm-indicator');
+  const meditationAudioIndicator = document.getElementById('meditation-audio-indicator');
+  const meditationAudioIndicatorLabel = document.getElementById('meditation-audio-indicator-label');
+  const audioPickerBtns = Array.from(document.querySelectorAll('.audio-picker-btn'));
   const durationBtns = Array.from(document.querySelectorAll('.duration-btn'));
 
-  let meditationMode = 'video'; // 'video' | 'timer'
+  let meditationMode = 'audio'; // 'audio' | 'timer'
   let selectedTimerMinutes = null;
+  let selectedAudioOption = CONFIG.MEDITATION_AUDIO_OPTIONS[0]; // 初期選択は先頭（夜瞑想）
 
   function updateMeditationStartEnabled() {
     if (MeditationTimer.isRunning()) return; // 実施中はrunning状態のstateChangeコールバックに任せる
@@ -300,16 +303,28 @@
   function setMeditationMode(mode) {
     if (MeditationTimer.isRunning()) return; // 実施中はモード切替不可
     meditationMode = mode;
-    meditationModeVideoBtn.setAttribute('aria-selected', String(mode === 'video'));
+    meditationModeAudioBtn.setAttribute('aria-selected', String(mode === 'audio'));
     meditationModeTimerBtn.setAttribute('aria-selected', String(mode === 'timer'));
-    meditationModeVideoSection.hidden = mode !== 'video';
     meditationModeTimerSection.hidden = mode !== 'timer';
     meditationDisplay.textContent = '00:00';
     updateMeditationStartEnabled();
   }
 
-  meditationModeVideoBtn.addEventListener('click', () => setMeditationMode('video'));
+  function setSelectedAudio(option) {
+    if (MeditationTimer.isRunning()) return; // 実施中は音声切替不可
+    selectedAudioOption = option;
+    audioPickerBtns.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.audio === option.id)));
+  }
+
+  meditationModeAudioBtn.addEventListener('click', () => setMeditationMode('audio'));
   meditationModeTimerBtn.addEventListener('click', () => setMeditationMode('timer'));
+
+  audioPickerBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const option = CONFIG.MEDITATION_AUDIO_OPTIONS.find((o) => o.id === btn.dataset.audio);
+      if (option) setSelectedAudio(option);
+    });
+  });
 
   durationBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -323,19 +338,21 @@
   MeditationTimer.setCallbacks(
     (elapsedSec, targetSec) => {
       // タイマーモード（targetSecあり）は残り時間のカウントダウン、
-      // 動画モード（targetSecなし）は経過時間のカウントアップを表示する。
+      // 音声に合わせてモード（targetSecなし）は経過時間のカウントアップを表示する。
       const displaySec = targetSec !== null ? Math.max(0, targetSec - elapsedSec) : elapsedSec;
       meditationDisplay.textContent = formatElapsed(displaySec);
     },
     (running) => {
       meditationStopBtn.disabled = !running;
-      meditationModeVideoBtn.disabled = running;
+      meditationModeAudioBtn.disabled = running;
       meditationModeTimerBtn.disabled = running;
+      audioPickerBtns.forEach((b) => {
+        b.disabled = running;
+      });
       durationBtns.forEach((b) => {
         b.disabled = running;
       });
-      timerBgmIndicator.hidden = !(running && meditationMode === 'timer');
-      videoBgmIndicator.hidden = !(running && meditationMode === 'video');
+      meditationAudioIndicator.hidden = !running;
       if (!running) {
         updateMeditationStartEnabled();
       } else {
@@ -345,25 +362,19 @@
   );
 
   function finishMeditation(elapsedSec) {
-    if (meditationMode === 'video') {
-      meditationVideoPlayer.pause();
-    } else {
-      meditationTimerPlayer.pause();
-    }
+    meditationAudioPlayer.pause();
     meditationDisplay.textContent = '00:00';
     WakeLockManager.disable();
     clearMediaSessionPlaying();
     if (elapsedSec > 0) {
       Chime.play();
-      const videoId =
-        meditationMode === 'video' ? CONFIG.MEDITATION_BGM_VIDEO_ID : CONFIG.MEDITATION_TIMER_BGM_VIDEO_ID;
-      finishMeditationSession(elapsedSec, videoId);
+      finishMeditationSession(elapsedSec, selectedAudioOption.id);
     }
   }
 
-  // 動画モード：動画が最後まで再生されたら自動的に終了・記録する
-  meditationVideoPlayer.onEnded(() => {
-    if (meditationMode === 'video' && MeditationTimer.isRunning()) {
+  // 「音声に合わせて」モード：音声が最後まで再生されたら自動的に終了・記録する
+  meditationAudioPlayer.onEnded(() => {
+    if (meditationMode === 'audio' && MeditationTimer.isRunning()) {
       const elapsedSec = MeditationTimer.stop();
       finishMeditation(elapsedSec);
     }
@@ -372,18 +383,22 @@
   meditationStartBtn.addEventListener('click', () => {
     Chime.unlock(); // ユーザー操作の文脈内でAudioContextを解放（自動終了時にも鳴らせるようにする）
     WakeLockManager.enable();
-    if (meditationMode === 'video') {
-      meditationVideoPlayer.play(); // ユーザー操作の文脈内で呼ぶ（iOSの自動再生制限対策）
+    meditationAudioPlayer.load(selectedAudioOption.file);
+    meditationAudioIndicatorLabel.textContent = `${selectedAudioOption.label}を再生中`;
+    if (meditationMode === 'audio') {
+      meditationAudioPlayer.setLoop(false);
+      meditationAudioPlayer.play(); // ユーザー操作の文脈内で呼ぶ（iOSの自動再生制限対策）
       MeditationTimer.start();
-      setMediaSessionPlaying('瞑想（動画に合わせて）');
+      setMediaSessionPlaying(`瞑想（${selectedAudioOption.label}）`, meditationAudioPlayer);
     } else {
       if (selectedTimerMinutes === null) return;
-      meditationTimerPlayer.play();
+      meditationAudioPlayer.setLoop(true); // タイマーの目標時間まで音声を流し続ける
+      meditationAudioPlayer.play();
       MeditationTimer.start({
         targetSec: selectedTimerMinutes * 60,
         onComplete: (elapsedSec) => finishMeditation(elapsedSec),
       });
-      setMediaSessionPlaying('瞑想（タイマー）');
+      setMediaSessionPlaying(`瞑想（${selectedAudioOption.label}・タイマー）`, meditationAudioPlayer);
     }
   });
 
@@ -392,11 +407,14 @@
     finishMeditation(elapsedSec);
   });
 
-  setMeditationMode('video');
+  setMeditationMode('audio');
 
   // --- NSDR画面の配線 ---
-  const nsdrPlayer = MeditationPlayer.create('yt-player-nsdr');
-  nsdrPlayer.load(CONFIG.NSDR_NARRATION_VIDEO_ID);
+  // ナレーション音声（固定1種類）。手動で「終了して記録」を押すまで実施する想定のため、
+  // 音声が最後まで流れても無音にならないようループ再生する。
+  const nsdrAudioPlayer = AudioPlayer.create('nsdr-audio');
+  nsdrAudioPlayer.load(CONFIG.NSDR_NARRATION_AUDIO.file);
+  nsdrAudioPlayer.setLoop(true);
 
   const nsdrDisplay = document.getElementById('nsdr-timer-display');
   const nsdrStartBtn = document.getElementById('btn-nsdr-start');
@@ -417,14 +435,14 @@
   nsdrStartBtn.addEventListener('click', () => {
     Chime.unlock(); // ユーザー操作の文脈内でAudioContextを解放（終了時に鳴らせるようにする）
     WakeLockManager.enable();
-    nsdrPlayer.play();
+    nsdrAudioPlayer.play();
     NsdrTimer.start();
-    setMediaSessionPlaying('NSDR');
+    setMediaSessionPlaying('NSDR', nsdrAudioPlayer);
   });
 
   nsdrStopBtn.addEventListener('click', () => {
     const elapsedSec = NsdrTimer.stop();
-    nsdrPlayer.pause();
+    nsdrAudioPlayer.pause();
     nsdrDisplay.textContent = '00:00';
     WakeLockManager.disable();
     clearMediaSessionPlaying();

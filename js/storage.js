@@ -39,7 +39,7 @@ function getSessions() {
 
 /**
  * セッション記録を1件追加する
- * @param {Object} session - { date, type, durationSec, youtubeVideoId }
+ * @param {Object} session - { date, type, durationSec, audioId }
  * @returns {Object} 保存された完全なセッションレコード（id, createdAt付与済み）
  */
 function addSession(session) {
@@ -51,7 +51,7 @@ function addSession(session) {
     date: session.date || formatDateLocal(now),
     type: session.type,
     durationSec: session.durationSec,
-    youtubeVideoId: session.youtubeVideoId || '',
+    audioId: session.audioId || '',
     createdAt: now.toISOString(),
   };
 

@@ -1,24 +1,21 @@
 // config.js
-// 瞑想BGM・NSDRナレーションのYouTube動画IDを設定するファイル。
-// 下記の値はプレースホルダーです。実際に使用する動画のIDに差し替えてください。
+// 瞑想・NSDRで再生する音声ファイルの設定。
 //
-// YouTube動画IDの調べ方：
-//   https://www.youtube.com/watch?v=XXXXXXXXXXX の "v=" 以降の11文字が動画IDです。
-//   例）https://www.youtube.com/watch?v=dQw4w9WgXcQ → 動画IDは "dQw4w9WgXcQ"
-//
-// 注意：
-//   - 非公開・限定公開動画や埋め込み無効化されている動画は再生できません。
-//   - ライブ配信ではなく通常動画（できれば長尺・ループ可能なもの）を推奨します。
+// YouTube埋め込みは画面ロック中に再生が止まってしまう制約があったため、
+// ロイヤリティフリー音源の音声ファイル（audio/ 配下、mp3）を自前ホスティングし、
+// <audio> 要素で再生する方式に変更した（詳細はCLAUDE.md参照）。
+// 同一オリジンの <audio> 要素はMedia Session APIとの連携でiOS Safariの
+// バックグラウンド再生に正式対応しているため、YouTube埋め込みより
+// 画面ロック中も再生が継続しやすい。
 
 const CONFIG = {
-  // 瞑想「動画モード」で画面に表示しながら再生するBGM用YouTube動画ID。
-  // 動画の再生終了と同時にセッションも自動終了・記録される。
-  MEDITATION_BGM_VIDEO_ID: 'WDT9nUa3Ok8',
+  // 瞑想で選べる音声の候補（3種類）。ユーザーが瞑想画面で自由に選択する。
+  MEDITATION_AUDIO_OPTIONS: [
+    { id: 'night-meditation', label: '夜瞑想', icon: '🌙', file: 'audio/night-meditation.mp3' },
+    { id: 'tibetan-bowl', label: 'チベタン', icon: '🎐', file: 'audio/tibetan-bowl.mp3' },
+    { id: 'meditation-bgm', label: '瞑想BGM', icon: '🎼', file: 'audio/meditation-bgm.mp3' },
+  ],
 
-  // 瞑想「タイマーモード」で音声のみ再生するBGM用YouTube動画ID
-  // （チベタンシンギングボウルの倍音、瞑想と相性が良い長尺の音源）。
-  MEDITATION_TIMER_BGM_VIDEO_ID: '2X4RKVwvP0g',
-
-  // NSDR実施時に再生する誘導ナレーション用YouTube動画ID
-  NSDR_NARRATION_VIDEO_ID: 'AKGrmY8OSHM',
+  // NSDR実施時に再生する誘導ナレーション音声（固定1種類）
+  NSDR_NARRATION_AUDIO: { id: 'nsdr-narration', label: 'NSDRナレーション', file: 'audio/nsdr-narration.mp3' },
 };

@@ -105,13 +105,13 @@ const MeditationTimer = (() => {
 /**
  * 瞑想セッションを終了して記録を保存するヘルパー
  * @param {number} elapsedSec
- * @param {string} [youtubeVideoId] - 省略時は動画モード用のBGM IDを使う
+ * @param {string} audioId - 実施時に選択していた音声のid（CONFIG.MEDITATION_AUDIO_OPTIONS参照）
  * @returns {Object} 保存されたセッション記録
  */
-function finishMeditationSession(elapsedSec, youtubeVideoId) {
+function finishMeditationSession(elapsedSec, audioId) {
   return addSession({
     type: 'meditation',
     durationSec: elapsedSec,
-    youtubeVideoId: youtubeVideoId || CONFIG.MEDITATION_BGM_VIDEO_ID,
+    audioId,
   });
 }
