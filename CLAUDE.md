@@ -50,7 +50,7 @@ meditation-app/
    - **音声に合わせてモード**：選んだ音声ファイルを最後まで再生。再生終了（`AudioPlayer` の `onEnded`）と同時にセッションを自動終了・記録する。手動で「終了して記録」を押すこともできる
    - **タイマーモード**：5/10/15/20/30分のプリセットから時間を選んで開始。選んだ音声をループ再生しながら、指定時間の経過（`MeditationTimer.start({ targetSec, onComplete })`）で自動終了・記録する
    - **そのまま寝るモード**：`config.js` の `SLEEP_DURATION_PRESETS_MIN`（15/30/45/60分）から時間を選んで開始。選んだ音声をループ再生し、`MeditationTimer`のtickコールバック内で残り時間が`SLEEP_FADE_OUT_SEC`（30秒）以下になったタイミングを検知して`AudioPlayer.fadeOutAndStop()`を呼び、選んだ時間ちょうどで無音になるよう音量を徐々に下げていく。目標時間到達で自動終了・記録する（そのまま眠ってしまってよい想定の機能）
-   - 実施中は音声選択・モード切替・プリセット選択を無効化する
+   - 実施中はモード切替・プリセット選択を無効化するが、**音声選択（`.audio-picker`）だけは実施中も有効**：終了せずに音源を途中で変更できる（`setSelectedAudio()`）。経過時間・残り時間（`MeditationTimer`）は一切リセットせず、再生中の音声だけを差し替えて続行する。「音声に合わせてモード」で音源を変えた場合、自動終了の基準（`onEnded`）も新しい音声の終了に自然に切り替わる。「そのまま寝るモード」の途中で変えた場合、新しい音声はフルボリュームから始まるためフェード開始判定（`sleepFadeStarted`）をやり直す
    - 音声はすべて `<audio id="meditation-audio">` 要素（画面には表示せず、再生中かどうかは `.bgm-indicator` で伝える）
 2. **NSDR**
    - `config.js` の `NSDR_NARRATION_AUDIO` に設定した誘導ナレーション音声を再生（`<audio id="nsdr-audio">`、`.bgm-indicator` で再生中を表示）。手動終了前提のためループ再生する

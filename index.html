@@ -339,9 +339,28 @@
   }
 
   function setSelectedAudio(option) {
-    if (MeditationTimer.isRunning()) return; // 実施中は音声切替不可
+    const wasRunning = MeditationTimer.isRunning();
     selectedAudioOption = option;
     audioPickerBtns.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.audio === option.id)));
+
+    if (!wasRunning) return;
+
+    // 実施中の音源切り替え：経過時間・残り時間は一切リセットせず、再生中の音声だけ差し替える。
+    // 「音声に合わせて」モードは既存の onEnded ハンドラがそのまま新しい音声の終了を検知するため、
+    // 自動終了の基準も自然に新しい音声の終了に切り替わる。
+    meditationAudioPlayer.load(option.file);
+    meditationAudioPlayer.setLoop(meditationMode !== 'audio');
+    meditationAudioPlayer.play();
+    meditationAudioIndicatorLabel.textContent = `${option.label}を再生中`;
+
+    if (meditationMode === 'sleep') {
+      // フェード中に音源を変えた場合、新しい音声はフルボリュームから始まるため
+      // フェード開始判定をやり直し、残り時間に応じて自然に再フェードされるようにする
+      sleepFadeStarted = false;
+    }
+
+    const modeSuffix = meditationMode === 'timer' ? '・タイマー' : meditationMode === 'sleep' ? '・そのまま寝る' : '';
+    setMediaSessionPlaying(`瞑想（${option.label}${modeSuffix}）`, meditationAudioPlayer);
   }
 
   meditationModeAudioBtn.addEventListener('click', () => setMeditationMode('audio'));
@@ -395,9 +414,7 @@
       meditationModeAudioBtn.disabled = running;
       meditationModeTimerBtn.disabled = running;
       meditationModeSleepBtn.disabled = running;
-      audioPickerBtns.forEach((b) => {
-        b.disabled = running;
-      });
+      // audioPickerBtns（音声選択）は実施中も有効のまま：途中で音源を変更できるようにする
       timerDurationBtns.forEach((b) => {
         b.disabled = running;
       });
