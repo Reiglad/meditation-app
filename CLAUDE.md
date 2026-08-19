@@ -2,6 +2,7 @@
 
 ## プロジェクト概要
 瞑想（通常瞑想）とNSDR（Non-Sleep Deep Rest）を記録・実施できる、iPhone向けの個人用PWA。
+夜の心身の振り返り（睡眠の質・気分・ストレス等）の記録機能も持つ。
 ホーム画面に追加してワンタップで開ける状態を目指す。完全無料構成で運用する。
 
 - 公開URL：https://reiglad.github.io/meditation-app/
@@ -35,7 +36,9 @@ meditation-app/
 │   ├── quotes.js        # ホーム画面に表示する「自分を大切にする」言葉集
 │   ├── backgrounds.js   # 起動ごとに切り替わる自然写真背景のファイルリスト
 │   ├── chime.js         # 瞑想・NSDR終了時の通知チャイム音（Web Audio APIで自前生成）
-│   └── wakelock.js      # 実施中の画面自動スリープ防止（Screen Wake Lock API）
+│   ├── wakelock.js      # 実施中の画面自動スリープ防止（Screen Wake Lock API）
+│   ├── health.js        # 心身の振り返り（睡眠・気分・ストレス等）のlocalStorage読み書き、項目定義
+│   └── health-chart.js  # 心身の記録の推移を示す折れ線グラフ描画（Canvas 2D API、外部ライブラリ不使用）
 ├── audio/                # 瞑想・NSDR用の音声ファイル4本（mp3、下記機能要件参照）
 ├── images/
 │   └── nature/           # 背景写真15枚（Unsplash無料ライセンス、下記UI方針参照）
@@ -67,6 +70,13 @@ meditation-app/
 5. **名言表示**
    - ホーム画面を表示するたびに、`js/quotes.js` の `SELF_CARE_QUOTES` からランダムに1つ選んで表示する（`getRandomQuote()`）
    - 特定の著作物からの引用ではなく、このアプリのために書き下ろしたオリジナルの言葉のみを収録する（著作権上の配慮）。追加する場合も既存の言葉を参考にしつつオリジナルの文章にすること
+6. **心身チェックイン（夜の振り返り）**：睡眠・NSDR・瞑想の記録とは別に、日々の心身の状態を記録する機能
+   - `js/health.js` の `HEALTH_METRICS`（睡眠の質・今日の気分・ストレス・エネルギー・集中力の5項目）を、すべて1〜5の5段階アイコンタップで回答する（`.rating-picker` / `.rating-btn`）。評価はすべて「5が良い状態」になるようそろえてある（ストレスは項目としては逆方向のため、ラベルを「とても穏やか」〜「とても緊張」にして5=穏やかにしている）
+   - `EXERCISE_OPTIONS`（なし/軽め/普通/しっかりの4択）で運動の有無・強度を記録（`.exercise-picker`）
+   - メモ欄（`#checkin-memo`、任意の自由記述）
+   - **表示トリガー**：`isEveningNow()`（18時以降）かつ当日まだ未回答（`hasTodayCheckin()`）の場合のみ、ホーム画面に振り返りバナー（`#checkin-banner`）を表示する。強制的なポップアップにはせず、タップした時だけ`#screen-checkin`画面が開く
+   - 1日1件（同じ日付なら上書き、`upsertCheckin()`）。画面はホーム画面から「心身の記録」ボタンでも直接開ける
+   - **記録の確認**：`#screen-health-history`画面で、直近14日分の推移を項目ごとに切り替えられる折れ線グラフ（`js/health-chart.js`の`HealthChart.draw()`、Canvas 2D APIで自前描画）と、全期間の履歴一覧（アイコン＋メモ）を表示する
 
 ## データモデル
 `localStorage` にセッション記録の配列をJSONで保持する。
@@ -82,8 +92,27 @@ meditation-app/
 }
 ```
 
+心身チェックインは別の`localStorage`キー（`health_checkins_v1`）に配列で保持する。
+
+```json
+{
+  "id": "uuid",
+  "date": "2026-08-19",
+  "sleepQuality": 1,
+  "mood": 1,
+  "stress": 1,
+  "energy": 1,
+  "focus": 1,
+  "exercise": "none | light | moderate | intense",
+  "memo": "自由記述（任意）",
+  "createdAt": "2026-08-19T18:30:00+09:00",
+  "updatedAt": "2026-08-19T18:30:00+09:00"
+}
+```
+
+- 各評価項目は1〜5の整数（未回答はnull）。1レコード＝1日（同じ日付は上書き、`upsertCheckin()`）。
 - データはiPhone内のみに保存し、他端末との同期は行わない（現時点の方針）。
-- 将来クラウド同期（Firebase等）を追加しやすいよう、`storage.js` にデータ層を薄く分離しておく。
+- 将来クラウド同期（Firebase等）を追加しやすいよう、`storage.js` / `health.js` にデータ層を薄く分離しておく。
 
 ## UI方針
 - **書体**：[Upmind](https://upmind.co.jp/) と同じフォント構成。本文は Noto Sans JP、見出し・数字（`h1`, `.timer-display`, `.duration-btn`, `.stat-card .value`）は Wix Madefor Display を優先。Google Fontsから読み込む（`index.html` の `<link>`）。オフライン等で読み込めない場合はシステムフォントにフォールバックする

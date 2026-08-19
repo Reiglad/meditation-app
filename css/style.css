@@ -195,6 +195,58 @@ header.app-header h1 {
   content: '\201D';
 }
 
+/* --- ホーム画面：心身の振り返りバナー（夜18時以降・当日未回答のときだけ表示） --- */
+.checkin-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.9rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.checkin-banner[hidden] {
+  display: none;
+}
+
+.checkin-banner-icon {
+  flex: none;
+  font-size: 1.3rem;
+}
+
+.checkin-banner-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.checkin-banner-text .title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.checkin-banner-text .sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.checkin-banner-arrow {
+  flex: none;
+  font-size: 1.3rem;
+  color: var(--text-muted);
+}
+
 .home-actions {
   display: flex;
   flex-direction: column;
@@ -382,6 +434,159 @@ header.app-header h1 {
 
 .bgm-indicator[hidden] {
   display: none;
+}
+
+/* --- 心身チェックイン画面：5段階アイコン評価・運動・メモ --- */
+.rating-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rating-label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.rating-picker {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.rating-btn {
+  flex: 1;
+  padding: 0.6rem 0;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.rating-btn[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.exercise-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.exercise-btn {
+  flex: 1;
+  min-width: 4.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.6rem 0.3rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.exercise-btn span:first-child {
+  font-size: 1.15rem;
+}
+
+.exercise-btn[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+.checkin-memo {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.checkin-memo::placeholder {
+  color: var(--text-muted);
+}
+
+/* --- 心身の記録：グラフ・履歴一覧 --- */
+.chart-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.chart-tab-btn {
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.chart-tab-btn[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+.health-chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 0.75rem;
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.health-chart-wrap canvas {
+  width: 100%;
+  height: 140px;
+  display: block;
+}
+
+.health-history-icons {
+  display: flex;
+  gap: 0.35rem;
+  font-size: 1.05rem;
+  margin-top: 0.2rem;
+}
+
+.health-history-memo {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.health-history-item {
+  align-items: flex-start;
 }
 
 .timer-display {

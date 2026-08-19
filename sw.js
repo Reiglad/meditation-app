@@ -8,7 +8,7 @@
 // installイベントが発火せず、古いキャッシュ（例: 差し替え前のconfig.jsの内容）が
 // 使われ続けてしまう。CACHE_NAMEを変えることでsw.js自体のバイト内容が変わり、
 // 確実に新しいバージョンとして認識・再キャッシュされる。
-const CACHE_NAME = 'meditation-app-cache-v15';
+const CACHE_NAME = 'meditation-app-cache-v16';
 
 // 背景写真（images/nature/*.webp）・音声ファイル（audio/*.mp3）はここには含めない。
 // 事前キャッシュすると初回ロードが重くなる（背景写真15枚・約7MB、音声4本・約77MB）ため、
@@ -29,6 +29,8 @@ const PRECACHE_URLS = [
   './js/backgrounds.js',
   './js/chime.js',
   './js/wakelock.js',
+  './js/health.js',
+  './js/health-chart.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',

@@ -47,6 +47,17 @@
     <div id="quote-card" class="quote-card">
       <p id="quote-text" class="quote-text"></p>
     </div>
+
+    <!-- 夜（18時以降）かつ当日まだ未回答の場合のみ表示する、心身の振り返りへの誘導バナー -->
+    <button id="checkin-banner" class="checkin-banner" type="button" hidden>
+      <span class="checkin-banner-icon" aria-hidden="true">📝</span>
+      <span class="checkin-banner-text">
+        <span class="title">今日の振り返りを記録する</span>
+        <span class="sub">睡眠・気分・ストレスなどをタップで簡単に</span>
+      </span>
+      <span class="checkin-banner-arrow" aria-hidden="true">›</span>
+    </button>
+
     <div class="home-actions">
       <button id="btn-go-meditation" class="big-button primary" type="button">
         <span class="icon" aria-hidden="true">🌙</span>
@@ -60,6 +71,13 @@
         <span class="label-group">
           <span class="title">NSDRを始める</span>
           <span class="sub">誘導ナレーションを聴きながら実施</span>
+        </span>
+      </button>
+      <button id="btn-go-health" class="big-button" type="button">
+        <span class="icon" aria-hidden="true">💗</span>
+        <span class="label-group">
+          <span class="title">心身の記録</span>
+          <span class="sub">睡眠・気分・ストレスなどの振り返り</span>
         </span>
       </button>
       <button id="btn-go-history" class="big-button" type="button">
@@ -151,6 +169,62 @@
     </div>
   </section>
 
+  <!-- 心身チェックイン画面：睡眠の質・気分・ストレス・エネルギー・集中力・運動・メモを記録する -->
+  <section id="screen-checkin" class="screen" hidden>
+    <button class="back-link" data-target="home" type="button">← ホームに戻る</button>
+    <p class="session-title">今日の振り返り</p>
+
+    <div class="rating-block" data-metric="sleepQuality">
+      <p class="rating-label">😴 睡眠の質</p>
+      <div class="rating-picker" role="tablist"></div>
+    </div>
+    <div class="rating-block" data-metric="mood">
+      <p class="rating-label">🙂 今日の気分</p>
+      <div class="rating-picker" role="tablist"></div>
+    </div>
+    <div class="rating-block" data-metric="stress">
+      <p class="rating-label">🧘 ストレス</p>
+      <div class="rating-picker" role="tablist"></div>
+    </div>
+    <div class="rating-block" data-metric="energy">
+      <p class="rating-label">⚡ エネルギー</p>
+      <div class="rating-picker" role="tablist"></div>
+    </div>
+    <div class="rating-block" data-metric="focus">
+      <p class="rating-label">🎯 集中力</p>
+      <div class="rating-picker" role="tablist"></div>
+    </div>
+
+    <div class="rating-block">
+      <p class="rating-label">🏃 運動</p>
+      <div id="exercise-picker" class="exercise-picker" role="tablist"></div>
+    </div>
+
+    <div class="rating-block">
+      <p class="rating-label">📝 メモ（任意）</p>
+      <textarea id="checkin-memo" class="checkin-memo" rows="3" placeholder="気になったことを自由に書き留めておけます"></textarea>
+    </div>
+
+    <div class="session-controls">
+      <button id="btn-checkin-save" class="btn primary" type="button">保存する</button>
+    </div>
+    <p id="checkin-saved-notice" class="notice" hidden>今日の記録を保存しました</p>
+  </section>
+
+  <!-- 心身の記録：グラフ・履歴一覧画面 -->
+  <section id="screen-health-history" class="screen" hidden>
+    <button class="back-link" data-target="home" type="button">← ホームに戻る</button>
+    <p class="session-title">心身の記録</p>
+
+    <div id="health-chart-tabs" class="chart-tabs" role="tablist"></div>
+    <div class="health-chart-wrap">
+      <canvas id="health-chart-canvas"></canvas>
+    </div>
+
+    <ul id="health-history-list" class="history-list"></ul>
+    <p id="health-history-empty" class="empty-state" hidden>まだ記録がありません</p>
+  </section>
+
   <!-- 記録画面 -->
   <section id="screen-history" class="screen" hidden>
     <button class="back-link" data-target="home" type="button">← ホームに戻る</button>
@@ -199,6 +273,10 @@
 <script src="js/chime.js"></script>
 <!-- js/wakelock.js: 実施中の画面自動スリープ防止 -->
 <script src="js/wakelock.js"></script>
+<!-- js/health.js: 心身の振り返り（睡眠・気分・ストレス等）のlocalStorage読み書き -->
+<script src="js/health.js"></script>
+<!-- js/health-chart.js: 心身の記録の推移を示す折れ線グラフ描画 -->
+<script src="js/health-chart.js"></script>
 
 <script>
   // ------------------------------------------------------------
@@ -215,6 +293,8 @@
     home: document.getElementById('screen-home'),
     meditation: document.getElementById('screen-meditation'),
     nsdr: document.getElementById('screen-nsdr'),
+    checkin: document.getElementById('screen-checkin'),
+    healthHistory: document.getElementById('screen-health-history'),
     history: document.getElementById('screen-history'),
   };
 
@@ -225,9 +305,16 @@
     if (name === 'history') {
       renderHistory();
     }
+    if (name === 'checkin') {
+      initCheckinScreen();
+    }
+    if (name === 'healthHistory') {
+      initHealthHistoryScreen();
+    }
     if (name === 'home') {
       updateHomeStreak();
       document.getElementById('quote-text').textContent = getRandomQuote();
+      updateCheckinBanner();
     }
   }
 
@@ -239,10 +326,17 @@
 
   document.getElementById('btn-go-meditation').addEventListener('click', () => showScreen('meditation'));
   document.getElementById('btn-go-nsdr').addEventListener('click', () => showScreen('nsdr'));
+  document.getElementById('btn-go-health').addEventListener('click', () => showScreen('healthHistory'));
   document.getElementById('btn-go-history').addEventListener('click', () => showScreen('history'));
+  document.getElementById('checkin-banner').addEventListener('click', () => showScreen('checkin'));
   document.querySelectorAll('.back-link').forEach((btn) => {
     btn.addEventListener('click', () => showScreen(btn.dataset.target));
   });
+
+  // --- 心身の振り返りバナー（夜18時以降・当日未回答のときだけ表示） ---
+  function updateCheckinBanner() {
+    document.getElementById('checkin-banner').hidden = !(isEveningNow() && !hasTodayCheckin());
+  }
 
   // --- オフライン通知 ---
   function updateOfflineNotices() {
@@ -542,6 +636,189 @@
       return `${h}:${String(m).padStart(2, '0')}:${ss}`;
     }
     return `${String(m).padStart(2, '0')}:${ss}`;
+  }
+
+  // --- 心身チェックイン画面 ---
+  // 5段階評価（睡眠の質・気分・ストレス・エネルギー・集中力）と運動・メモを、
+  // すべてアイコンタップで回答できるようにする。checkinDraftは画面表示中だけ保持する
+  // 一時的な回答状態で、「保存する」ボタンを押した時に health.js の upsertCheckin() に渡す。
+  let checkinDraft = {};
+
+  /**
+   * 5段階アイコンのトグルボタン群を生成する（睡眠・気分・ストレス・エネルギー・集中力で共通）
+   * @param {HTMLElement} container
+   * @param {Object} metric - HEALTH_METRICS の1要素（icons, key等）
+   * @param {number|null} selectedValue
+   * @param {Function} onSelect - (value: 1-5) => void
+   */
+  function renderRatingPicker(container, metric, selectedValue, onSelect) {
+    container.innerHTML = '';
+    metric.icons.forEach((icon, i) => {
+      const value = i + 1;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'rating-btn';
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(value === selectedValue));
+      btn.textContent = icon;
+      btn.addEventListener('click', () => {
+        onSelect(value);
+        Array.from(container.children).forEach((b, idx) => {
+          b.setAttribute('aria-selected', String(idx + 1 === value));
+        });
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  function initCheckinScreen() {
+    const existing = getTodayCheckin();
+    checkinDraft = existing
+      ? {
+          sleepQuality: existing.sleepQuality,
+          mood: existing.mood,
+          stress: existing.stress,
+          energy: existing.energy,
+          focus: existing.focus,
+          exercise: existing.exercise,
+          memo: existing.memo,
+        }
+      : { sleepQuality: null, mood: null, stress: null, energy: null, focus: null, exercise: null, memo: '' };
+
+    HEALTH_METRICS.forEach((metric) => {
+      const container = document.querySelector(`.rating-block[data-metric="${metric.key}"] .rating-picker`);
+      renderRatingPicker(container, metric, checkinDraft[metric.key], (value) => {
+        checkinDraft[metric.key] = value;
+      });
+    });
+
+    const exerciseContainer = document.getElementById('exercise-picker');
+    exerciseContainer.innerHTML = '';
+    EXERCISE_OPTIONS.forEach((opt) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'exercise-btn';
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(opt.id === checkinDraft.exercise));
+      btn.innerHTML = `<span aria-hidden="true">${opt.icon}</span><span>${opt.label}</span>`;
+      btn.addEventListener('click', () => {
+        checkinDraft.exercise = opt.id;
+        Array.from(exerciseContainer.children).forEach((b) => {
+          b.setAttribute('aria-selected', String(b === btn));
+        });
+      });
+      exerciseContainer.appendChild(btn);
+    });
+
+    document.getElementById('checkin-memo').value = checkinDraft.memo || '';
+    document.getElementById('checkin-saved-notice').hidden = true;
+  }
+
+  document.getElementById('btn-checkin-save').addEventListener('click', () => {
+    checkinDraft.memo = document.getElementById('checkin-memo').value;
+    upsertCheckin(checkinDraft);
+    document.getElementById('checkin-saved-notice').hidden = false;
+    updateCheckinBanner();
+  });
+
+  // --- 心身の記録：グラフ・履歴一覧画面 ---
+  let selectedHealthMetricKey = HEALTH_METRICS[0].key;
+
+  function initHealthHistoryScreen() {
+    const tabsContainer = document.getElementById('health-chart-tabs');
+    tabsContainer.innerHTML = '';
+    HEALTH_METRICS.forEach((metric) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chart-tab-btn';
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(metric.key === selectedHealthMetricKey));
+      btn.textContent = metric.label;
+      btn.addEventListener('click', () => {
+        selectedHealthMetricKey = metric.key;
+        Array.from(tabsContainer.children).forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
+        drawHealthChart();
+      });
+      tabsContainer.appendChild(btn);
+    });
+
+    drawHealthChart();
+    renderHealthHistoryList();
+  }
+
+  function drawHealthChart() {
+    const canvas = document.getElementById('health-chart-canvas');
+    const metric = HEALTH_METRICS.find((m) => m.key === selectedHealthMetricKey);
+    const recent = getRecentCheckins(14); // 直近14日分の推移を表示
+    const points = recent.map((c) => ({ date: c.date, value: c[metric.key] }));
+    HealthChart.draw(canvas, points, metric.color);
+  }
+
+  function renderHealthHistoryList() {
+    const checkins = getCheckins();
+    const list = document.getElementById('health-history-list');
+    const emptyState = document.getElementById('health-history-empty');
+    list.innerHTML = '';
+
+    if (checkins.length === 0) {
+      emptyState.hidden = false;
+      return;
+    }
+    emptyState.hidden = true;
+
+    const sorted = [...checkins].sort((a, b) => (a.date < b.date ? 1 : -1));
+
+    sorted.forEach((c) => {
+      const li = document.createElement('li');
+      li.className = 'history-item health-history-item';
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+
+      const date = document.createElement('span');
+      date.className = 'date';
+      date.textContent = c.date;
+      meta.appendChild(date);
+
+      const icons = document.createElement('div');
+      icons.className = 'health-history-icons';
+      HEALTH_METRICS.forEach((metric) => {
+        const span = document.createElement('span');
+        span.title = metric.label;
+        span.textContent = c[metric.key] ? metric.icons[c[metric.key] - 1] : '—';
+        icons.appendChild(span);
+      });
+      const exerciseOption = EXERCISE_OPTIONS.find((o) => o.id === c.exercise);
+      if (exerciseOption) {
+        const span = document.createElement('span');
+        span.title = `運動: ${exerciseOption.label}`;
+        span.textContent = exerciseOption.icon;
+        icons.appendChild(span);
+      }
+      meta.appendChild(icons);
+
+      if (c.memo) {
+        const memo = document.createElement('p');
+        memo.className = 'health-history-memo';
+        memo.textContent = c.memo;
+        meta.appendChild(memo);
+      }
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.type = 'button';
+      deleteBtn.textContent = '削除';
+      deleteBtn.addEventListener('click', () => {
+        deleteCheckin(c.id);
+        renderHealthHistoryList();
+        drawHealthChart();
+        updateCheckinBanner();
+      });
+
+      li.appendChild(meta);
+      li.appendChild(deleteBtn);
+      list.appendChild(li);
+    });
   }
 
   // --- 記録画面の描画 ---
