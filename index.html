@@ -169,46 +169,46 @@
     </div>
   </section>
 
-  <!-- 心身チェックイン画面：睡眠の質・気分・ストレス・エネルギー・集中力・運動・メモを記録する -->
+  <!-- 心身チェックイン画面：睡眠の質・気分・ストレス・エネルギー・集中力・運動・メモを、
+       1問ずつ順番に表示するウィザード形式で記録する。回答したら自動的に次の質問へ進む -->
   <section id="screen-checkin" class="screen" hidden>
     <button class="back-link" data-target="home" type="button">← ホームに戻る</button>
     <p class="session-title">今日の振り返り</p>
+    <p id="checkin-progress" class="checkin-progress"></p>
 
-    <div class="rating-block" data-metric="sleepQuality">
+    <div class="checkin-step" data-step="0" data-metric="sleepQuality">
       <p class="rating-label">😴 睡眠の質</p>
       <div class="rating-picker" role="tablist"></div>
     </div>
-    <div class="rating-block" data-metric="mood">
+    <div class="checkin-step" data-step="1" data-metric="mood" hidden>
       <p class="rating-label">🙂 今日の気分</p>
       <div class="rating-picker" role="tablist"></div>
     </div>
-    <div class="rating-block" data-metric="stress">
+    <div class="checkin-step" data-step="2" data-metric="stress" hidden>
       <p class="rating-label">🧘 ストレス</p>
       <div class="rating-picker" role="tablist"></div>
     </div>
-    <div class="rating-block" data-metric="energy">
+    <div class="checkin-step" data-step="3" data-metric="energy" hidden>
       <p class="rating-label">⚡ エネルギー</p>
       <div class="rating-picker" role="tablist"></div>
     </div>
-    <div class="rating-block" data-metric="focus">
+    <div class="checkin-step" data-step="4" data-metric="focus" hidden>
       <p class="rating-label">🎯 集中力</p>
       <div class="rating-picker" role="tablist"></div>
     </div>
-
-    <div class="rating-block">
+    <div class="checkin-step" data-step="5" hidden>
       <p class="rating-label">🏃 運動</p>
       <div id="exercise-picker" class="exercise-picker" role="tablist"></div>
     </div>
-
-    <div class="rating-block">
+    <div class="checkin-step" data-step="6" hidden>
       <p class="rating-label">📝 メモ（任意）</p>
       <textarea id="checkin-memo" class="checkin-memo" rows="3" placeholder="気になったことを自由に書き留めておけます"></textarea>
+      <div class="session-controls">
+        <button id="btn-checkin-save" class="btn primary" type="button">保存する</button>
+      </div>
     </div>
 
-    <div class="session-controls">
-      <button id="btn-checkin-save" class="btn primary" type="button">保存する</button>
-    </div>
-    <p id="checkin-saved-notice" class="notice" hidden>今日の記録を保存しました</p>
+    <button id="btn-checkin-prev" class="checkin-prev-link" type="button" hidden>← 前の質問に戻る</button>
   </section>
 
   <!-- 心身の記録：グラフ・履歴一覧画面 -->
@@ -250,6 +250,17 @@
 
     <ul id="history-list" class="history-list"></ul>
     <p id="history-empty" class="empty-state" hidden>まだ記録がありません</p>
+
+    <!-- データのバックアップ・復元：機種変更やSafariのデータ消去に備え、
+         全記録（瞑想・NSDR・心身チェックイン）をJSONファイルとして手元に保存できるようにする -->
+    <div class="backup-section">
+      <p class="backup-hint">アプリの更新でデータが消えることは通常ありませんが、機種変更や万一の場合に備えてバックアップを取っておけます。</p>
+      <div class="backup-actions">
+        <button id="btn-export-data" class="btn" type="button">📤 バックアップ</button>
+        <button id="btn-import-data" class="btn" type="button">📥 復元</button>
+      </div>
+      <input type="file" id="import-file-input" accept="application/json" hidden />
+    </div>
   </section>
 </div>
 
@@ -287,6 +298,14 @@
 
   // --- 背景画像（起動ごとにランダム切り替え） ---
   document.getElementById('bg-layer').style.backgroundImage = `url(${getRandomBackground()})`;
+
+  // --- ストレージの永続化をブラウザにリクエストする ---
+  // iOS SafariのITP（Intelligent Tracking Prevention）は、長期間開かれていない
+  // サイトのlocalStorageを自動的に削除することがある。永続化が許可されると、
+  // その対象から除外されやすくなる（保証ではないが、無料でリスクを下げられる）。
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().catch(() => {});
+  }
 
   // --- 画面遷移 ---
   const screens = {
@@ -638,11 +657,34 @@
     return `${String(m).padStart(2, '0')}:${ss}`;
   }
 
-  // --- 心身チェックイン画面 ---
+  // --- 心身チェックイン画面（1問ずつ進むウィザード形式） ---
   // 5段階評価（睡眠の質・気分・ストレス・エネルギー・集中力）と運動・メモを、
-  // すべてアイコンタップで回答できるようにする。checkinDraftは画面表示中だけ保持する
-  // 一時的な回答状態で、「保存する」ボタンを押した時に health.js の upsertCheckin() に渡す。
+  // すべてアイコンタップで回答できるようにする。回答すると自動的に次の質問へ進む
+  // （メモだけ自由記述のため、最後に「保存する」ボタンで確定する）。
+  // checkinDraftは画面表示中だけ保持する一時的な回答状態で、保存時に
+  // health.js の upsertCheckin() に渡す。
   let checkinDraft = {};
+  const CHECKIN_STEP_COUNT = document.querySelectorAll('.checkin-step').length;
+  let checkinStepIndex = 0;
+
+  function goToCheckinStep(index) {
+    checkinStepIndex = index;
+    document.querySelectorAll('.checkin-step').forEach((el) => {
+      el.hidden = Number(el.dataset.step) !== index;
+    });
+    document.getElementById('checkin-progress').textContent = `${index + 1} / ${CHECKIN_STEP_COUNT}`;
+    document.getElementById('btn-checkin-prev').hidden = index === 0;
+  }
+
+  function nextCheckinStep() {
+    if (checkinStepIndex < CHECKIN_STEP_COUNT - 1) {
+      goToCheckinStep(checkinStepIndex + 1);
+    }
+  }
+
+  document.getElementById('btn-checkin-prev').addEventListener('click', () => {
+    if (checkinStepIndex > 0) goToCheckinStep(checkinStepIndex - 1);
+  });
 
   /**
    * 5段階アイコンのトグルボタン群を生成する（睡眠・気分・ストレス・エネルギー・集中力で共通）
@@ -686,9 +728,10 @@
       : { sleepQuality: null, mood: null, stress: null, energy: null, focus: null, exercise: null, memo: '' };
 
     HEALTH_METRICS.forEach((metric) => {
-      const container = document.querySelector(`.rating-block[data-metric="${metric.key}"] .rating-picker`);
+      const container = document.querySelector(`.checkin-step[data-metric="${metric.key}"] .rating-picker`);
       renderRatingPicker(container, metric, checkinDraft[metric.key], (value) => {
         checkinDraft[metric.key] = value;
+        nextCheckinStep(); // 回答したら自動的に次の質問へ
       });
     });
 
@@ -706,19 +749,20 @@
         Array.from(exerciseContainer.children).forEach((b) => {
           b.setAttribute('aria-selected', String(b === btn));
         });
+        nextCheckinStep(); // 運動を選んだら自動的に次（メモ）へ
       });
       exerciseContainer.appendChild(btn);
     });
 
     document.getElementById('checkin-memo').value = checkinDraft.memo || '';
-    document.getElementById('checkin-saved-notice').hidden = true;
+    goToCheckinStep(0); // 開くたびに最初の質問から表示する
   }
 
   document.getElementById('btn-checkin-save').addEventListener('click', () => {
     checkinDraft.memo = document.getElementById('checkin-memo').value;
     upsertCheckin(checkinDraft);
-    document.getElementById('checkin-saved-notice').hidden = false;
     updateCheckinBanner();
+    showScreen('home'); // 保存したら自動的にホームへ戻る
   });
 
   // --- 心身の記録：グラフ・履歴一覧画面 ---
@@ -879,6 +923,61 @@
       list.appendChild(li);
     });
   }
+
+  // --- データのバックアップ・復元 ---
+  // 全記録（瞑想・NSDR記録＋心身チェックイン）をJSONファイルとして書き出し・読み込みできるようにする。
+  // Service Workerのキャッシュ更新はlocalStorageに一切影響しないため、アプリの更新自体で
+  // データが消えることは通常ないが、機種変更やSafariのデータ消去に備えた手動バックアップ手段として用意する。
+  document.getElementById('btn-export-data').addEventListener('click', () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      version: 1,
+      sessions: getSessions(),
+      healthCheckins: getCheckins(),
+    };
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    // iOS SafariのホームスクリーンPWA（standalone）は <a download> が効かないことがあるため、
+    // 新しいタブでBlobを開き、共有シートから「ファイルに保存」してもらう方式にする。
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  });
+
+  document.getElementById('btn-import-data').addEventListener('click', () => {
+    document.getElementById('import-file-input').click();
+  });
+
+  document.getElementById('import-file-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    e.target.value = ''; // 同じファイルを連続で選び直せるようにリセット
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      let payload;
+      try {
+        payload = JSON.parse(reader.result);
+      } catch (err) {
+        alert('ファイルの読み込みに失敗しました。正しいバックアップファイル（.json）を選択してください。');
+        return;
+      }
+      if (!Array.isArray(payload.sessions) && !Array.isArray(payload.healthCheckins)) {
+        alert('このファイルにはバックアップデータが含まれていないようです。');
+        return;
+      }
+      const ok = window.confirm('現在のデータを、選んだバックアップファイルの内容で上書きします。よろしいですか？');
+      if (!ok) return;
+
+      if (Array.isArray(payload.sessions)) saveSessions(payload.sessions);
+      if (Array.isArray(payload.healthCheckins)) saveCheckins(payload.healthCheckins);
+
+      renderHistory();
+      updateCheckinBanner();
+      alert('データを復元しました');
+    };
+    reader.readAsText(file);
+  });
 
   // --- Service Worker登録 ---
   if ('serviceWorker' in navigator) {

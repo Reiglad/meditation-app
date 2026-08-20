@@ -528,6 +528,33 @@ header.app-header h1 {
   color: var(--text-muted);
 }
 
+/* --- 心身チェックイン：ウィザード進捗表示・戻るリンク --- */
+.checkin-progress {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: -0.4rem 0 0;
+}
+
+.checkin-step[hidden] {
+  display: none;
+}
+
+.checkin-prev-link {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 0.4rem 0;
+  align-self: center;
+  cursor: pointer;
+}
+
+.checkin-prev-link[hidden] {
+  display: none;
+}
+
 /* --- 心身の記録：グラフ・履歴一覧 --- */
 .chart-tabs {
   display: flex;
@@ -785,6 +812,29 @@ header.app-header h1 {
   color: var(--text-muted);
   font-size: 0.9rem;
   padding: 2rem 0;
+}
+
+/* --- 記録画面：データのバックアップ・復元 --- */
+.backup-section {
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.backup-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.backup-actions {
+  display: flex;
+  gap: 0.6rem;
 }
 
 /* --- 注記バナー --- */

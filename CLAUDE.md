@@ -72,11 +72,16 @@ meditation-app/
    - 特定の著作物からの引用ではなく、このアプリのために書き下ろしたオリジナルの言葉のみを収録する（著作権上の配慮）。追加する場合も既存の言葉を参考にしつつオリジナルの文章にすること
 6. **心身チェックイン（夜の振り返り）**：睡眠・NSDR・瞑想の記録とは別に、日々の心身の状態を記録する機能
    - `js/health.js` の `HEALTH_METRICS`（睡眠の質・今日の気分・ストレス・エネルギー・集中力の5項目）を、すべて1〜5の5段階アイコンタップで回答する（`.rating-picker` / `.rating-btn`）。評価はすべて「5が良い状態」になるようそろえてある（ストレスは項目としては逆方向のため、ラベルを「とても穏やか」〜「とても緊張」にして5=穏やかにしている）
-   - `EXERCISE_OPTIONS`（なし/軽め/普通/しっかりの4択）で運動の有無・強度を記録（`.exercise-picker`）
-   - メモ欄（`#checkin-memo`、任意の自由記述）
-   - **表示トリガー**：`isEveningNow()`（18時以降）かつ当日まだ未回答（`hasTodayCheckin()`）の場合のみ、ホーム画面に振り返りバナー（`#checkin-banner`）を表示する。強制的なポップアップにはせず、タップした時だけ`#screen-checkin`画面が開く
-   - 1日1件（同じ日付なら上書き、`upsertCheckin()`）。画面はホーム画面から「心身の記録」ボタンでも直接開ける
+   - `EXERCISE_OPTIONS`（なし/軽め/普通/しっかりの4択）で運動の有無・強度を記録（`.exercise-picker`）、メモ欄（`#checkin-memo`、任意の自由記述）
+   - **ウィザード形式**：`#screen-checkin`は5項目＋運動＋メモの計7ステップを`.checkin-step`で1つずつ表示し（`goToCheckinStep()`）、5段階評価・運動は選ぶと自動的に次のステップへ進む（`nextCheckinStep()`）。メモのみ自由記述のため最後に「保存する」ボタンで確定する。「← 前の質問に戻る」（`#btn-checkin-prev`）で1つ前に戻れる（1問目では非表示）
+   - **表示トリガー**：`isEveningNow()`（18時以降）かつ当日まだ未回答（`hasTodayCheckin()`）の場合のみ、ホーム画面に振り返りバナー（`#checkin-banner`）を表示する。強制的なポップアップにはせず、タップした時だけ`#screen-checkin`画面が開く。**現状、この画面への導線はバナーのみ**（ホーム画面の「心身の記録」ボタンは`#screen-health-history`＝閲覧用のグラフ・履歴画面につながっており、そこから新規入力はできない。つまり18時より前は新規記録ができない仕様になっている）
+   - 1日1件（同じ日付なら上書き、`upsertCheckin()`）。「保存する」を押すと自動的にホーム画面へ戻る
    - **記録の確認**：`#screen-health-history`画面で、直近14日分の推移を項目ごとに切り替えられる折れ線グラフ（`js/health-chart.js`の`HealthChart.draw()`、Canvas 2D APIで自前描画）と、全期間の履歴一覧（アイコン＋メモ）を表示する
+7. **データのバックアップ・復元**：記録画面（`#screen-history`）下部から、全記録（瞑想・NSDRセッション＋心身チェックイン）をJSONファイルとして書き出し・読み込みできる
+   - 「📤 バックアップ」：`getSessions()` / `getCheckins()` の内容を1つのJSONにまとめ、Blob URLを新しいタブで開く（iOS SafariのstandalonePWAでは`<a download>`が効かないことがあるため、共有シートから「ファイルに保存」してもらう方式にしている）
+   - 「📥 復元」：`<input type="file">` で選んだJSONを読み込み、内容を確認（`confirm()`）した上で `saveSessions()` / `saveCheckins()` で丸ごと上書きする
+   - アプリの更新（`sw.js`のキャッシュ更新等）自体がlocalStorageのデータに影響することはない（Cache StorageとlocalStorageは別の仕組み）。このバックアップは、機種変更やiOS Safariの自動データ削除・誤操作に備えた保険として用意している
+   - あわせて `navigator.storage.persist()` を起動時に呼び、ブラウザにストレージの永続化をリクエストしている（iOS SafariのITPによる自動削除の対象から外れやすくする効果を狙うが、保証ではない）
 
 ## データモデル
 `localStorage` にセッション記録の配列をJSONで保持する。
