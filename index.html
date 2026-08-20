@@ -979,12 +979,40 @@
     reader.readAsText(file);
   });
 
-  // --- Service Worker登録 ---
+  // --- Service Worker登録・自動更新 ---
+  // アプリを開くたびに新しいバージョンがないか明示的にチェックし（registration.update()）、
+  // 新しいService Workerが制御を引き継いだ（controllerchange）タイミングで自動的に
+  // ページをリロードすることで、「アプリを開いたら最新版になっている」体験にする。
+  // ただし瞑想・NSDRを実施中に突然リロードするとセッションが失われるため、その間は保留し、
+  // 次にアプリを開いたときに改めて反映されるようにする。
   if ('serviceWorker' in navigator) {
+    let swRegistration = null;
+    let reloadingForUpdate = false;
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloadingForUpdate) return;
+      if (MeditationTimer.isRunning() || NsdrTimer.isRunning()) return; // 実施中はリロードを保留
+      reloadingForUpdate = true;
+      window.location.reload();
+    });
+
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch((e) => {
-        console.error('Service Worker登録に失敗しました', e);
-      });
+      navigator.serviceWorker
+        .register('sw.js')
+        .then((reg) => {
+          swRegistration = reg;
+          reg.update();
+        })
+        .catch((e) => {
+          console.error('Service Worker登録に失敗しました', e);
+        });
+    });
+
+    // ホーム画面のPWAをバックグラウンドから再度開いた場合も「開いた」とみなし、更新チェックする
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && swRegistration) {
+        swRegistration.update();
+      }
     });
   }
 
